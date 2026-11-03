@@ -10,3 +10,8 @@ body.is-loading{overflow:hidden}body.is-loading .screen{visibility:hidden}
 @media(max-width:760px){.header{min-height:72px}.header-brand{font-size:25px}.hero{padding-top:var(--hero-top,120px);padding-bottom:var(--hero-bottom,40px)}.story{min-height:0}.glass-card,.glass-card[data-slide="1"]{top:69%;max-height:53svh;overflow:auto}.glass-card p{font-size:14px}.story-cards{pointer-events:none}}
 @media(max-height:650px) and (min-width:761px){.glass-card{padding:24px}.glass-card p{font-size:15px}}
 .story{z-index:3}
+.roll-label{position:relative;display:inline-block;overflow:hidden;vertical-align:middle;line-height:1.3;perspective:500px}.roll-row{display:block;white-space:nowrap}.roll-copy{position:absolute;top:100%;left:0}.roll-char{display:inline-block;transform-origin:50% 50%;transition:transform .5s cubic-bezier(.22,1,.36,1),opacity .4s;transition-delay:var(--delay)}.roll-copy .roll-char{opacity:0;transform:rotateX(50deg)}
+@media(hover:hover){.roll-control:hover .roll-original .roll-char{transform:translateY(-105%) rotateX(-50deg);opacity:0}.roll-control:hover .roll-copy .roll-char{transform:translateY(-100%) rotateX(0);opacity:1}}
+.roll-control:focus-visible .roll-original .roll-char{transform:translateY(-105%) rotateX(-50deg);opacity:0}.roll-control:focus-visible .roll-copy .roll-char{transform:translateY(-100%) rotateX(0);opacity:1}
+.nav>a:not(.cta):hover{text-decoration:none}.cta:hover{transform:none}
+@media(prefers-reduced-motion:reduce){.roll-char{transition:none}.roll-original .roll-char,.roll-control:hover .roll-original .roll-char,.roll-control:focus-visible .roll-original .roll-char{transform:none;opacity:1}.roll-copy{display:none}}

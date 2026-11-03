@@ -11,7 +11,7 @@ const story=document.querySelector('.story'),cards=[...document.querySelectorAll
 const layer=document.createElement('div');layer.className='shared-product';layer.append(heroModel);document.body.append(layer);
 const morph=document.createElement('div');morph.className='brand-morph';morph.textContent='SafeClick';morph.setAttribute('aria-hidden','true');morph.hidden=true;document.body.append(morph);
 heroModel.removeAttribute('camera-controls');heroModel.setAttribute('disable-zoom','');heroModel.setAttribute('disable-pan','');heroModel.setAttribute('tabindex','-1');
-let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0;
+let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0,mouseX=0,mouseY=0,mouseTargetX=0,mouseTargetY=0,mouseRaf=0;
 const motionReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function storyTop(){return story.getBoundingClientRect().top+scrollY}
@@ -26,16 +26,15 @@ function paint(state){
  layer.style.opacity=(scrollY>storyTop()+vh*.5)?'0':'1';
  const spin=Math.max(0,state-1),fraction=spin%1;
  angle=interpolate(0,-8,t)-180*spin;
- const tilt=interpolate(88,82,t)+10*Math.sin(fraction*Math.PI);
+ const tilt=interpolate(85,82,t)+10*Math.sin(fraction*Math.PI)+mouseY*2;
  const roll=interpolate(40,-12,t)+30*Math.sin(fraction*Math.PI)+12*Math.sin(fraction*Math.PI*2);
- const radius=interpolate(90,mobile?125:105,t);heroModel.cameraOrbit=`${angle}deg ${tilt}deg ${radius}%`;heroModel.style.transform=`rotate(${roll}deg)`;if(heroModel.jumpCameraToGoal)heroModel.jumpCameraToGoal();
+ const radius=interpolate(90,mobile?125:105,t);heroModel.cameraOrbit=`${angle+mouseX*3}deg ${tilt}deg ${radius}%`;heroModel.style.transform=`translate(${mouseX*6}px,${mouseY*4}px) rotate(${roll}deg)`;if(heroModel.jumpCameraToGoal)heroModel.jumpCameraToGoal();
  const titleRect=title.getBoundingClientRect(),target=brand.getBoundingClientRect();const size=parseFloat(getComputedStyle(title).fontSize),brandSize=parseFloat(getComputedStyle(brand).fontSize);
  morph.style.left=`${interpolate(titleRect.left,target.left,t)}px`;morph.style.top=`${interpolate(titleRect.top+scrollY,target.top,t)}px`;morph.style.fontSize=`${interpolate(size,brandSize,t)}px`;morph.style.letterSpacing=`${interpolate(-.065*size,-1.2,t)}px`;
  morph.hidden=state===0;title.style.opacity=state===0?'1':'0';heading.querySelector('.eyebrow').style.opacity=String(1-t);
- heroCopy.style.opacity='1';
- const lines=[...heroCopy.querySelectorAll('.line-text')];
- if(lines.length){lines.forEach((line,i)=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());const fade=smooth(i*.07,.45+i*.07,t);line.style.opacity=String(1-fade);line.style.transform='none'})}
- else heroCopy.style.opacity=String(1-t);
+ heroCopy.style.opacity=String(1-smooth(.02,.85,t));
+ // Entry masks never animate during exit: fade the complete paragraph block.
+ heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
  updateCards(state);
  brand.style.pointerEvents=t===1?'auto':'none';
  if(scrollY>storyTop()+vh*.7)morph.hidden=true;
@@ -71,3 +70,26 @@ window.addEventListener('resize',()=>paint(frameState));new ResizeObserver(()=>p
 window.addEventListener('scroll',()=>{if(raf||performance.now()-lastWrite<120)return;const base=storyTop();if(scrollY<base*.25&&frameState>0){targetState=0;paint(0)}else if(Math.abs(scrollY-base)<4&&frameState<1){goTo(1)}else paint(frameState)},{passive:true});
 brand.addEventListener('click',e=>{e.preventDefault();goTo(0)});
 heroModel.addEventListener('error',()=>{document.querySelector('.story-error').hidden=false});
+
+// A small, damped response to pointer motion; disabled for touch and reduced motion.
+function drift(){
+ mouseX+=(mouseTargetX-mouseX)*.075;mouseY+=(mouseTargetY-mouseY)*.075;
+ if(Math.abs(mouseTargetX-mouseX)<.001&&Math.abs(mouseTargetY-mouseY)<.001){mouseX=mouseTargetX;mouseY=mouseTargetY;mouseRaf=0;paint(frameState);return}
+ paint(frameState);mouseRaf=requestAnimationFrame(drift);
+}
+if(!motionReduced&&matchMedia('(pointer:fine)').matches){
+ window.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;mouseTargetX=(e.clientX/innerWidth-.5)*2;mouseTargetY=(e.clientY/innerHeight-.5)*2;if(!mouseRaf)mouseRaf=requestAnimationFrame(drift)});
+ document.documentElement.addEventListener('pointerleave',()=>{mouseTargetX=mouseTargetY=0;if(!mouseRaf)mouseRaf=requestAnimationFrame(drift)});
+}
+// Duplicate visual lettering only; controls retain one accessible label.
+document.querySelectorAll('a:not(.header-brand),button,summary').forEach(control=>{
+ const label=control.textContent.trim();if(!label)return;
+ if(!control.hasAttribute('aria-label'))control.setAttribute('aria-label',label);
+ const wrap=document.createElement('span');wrap.className='roll-label';wrap.setAttribute('aria-hidden','true');
+ for(const copy of [false,true]){
+  const row=document.createElement('span');row.className=copy?'roll-row roll-copy':'roll-row roll-original';
+  [...label].forEach((letter,index)=>{const char=document.createElement('span');char.className='roll-char';char.style.setProperty('--delay',`${Math.min(index*.012,.12)}s`);char.textContent=letter===' '?'\u00a0':letter;row.append(char)});
+  wrap.append(row);
+ }
+ control.replaceChildren(wrap);control.classList.add('roll-control');
+});

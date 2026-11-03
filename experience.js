@@ -11,7 +11,7 @@ const story=document.querySelector('.story'),cards=[...document.querySelectorAll
 const layer=document.createElement('div');layer.className='shared-product';layer.append(heroModel);document.body.append(layer);
 const morph=document.createElement('div');morph.className='brand-morph';morph.textContent='SafeClick';morph.setAttribute('aria-hidden','true');morph.hidden=true;document.body.append(morph);
 heroModel.removeAttribute('camera-controls');heroModel.setAttribute('disable-zoom','');heroModel.setAttribute('disable-pan','');heroModel.setAttribute('tabindex','-1');
-let phase=0,angle=15,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0;
+let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0;
 const motionReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function storyTop(){return story.getBoundingClientRect().top+scrollY}
@@ -25,8 +25,8 @@ function paint(state){
  layer.style.width=`${interpolate(rect.width,end.width,t)}px`;layer.style.height=`${interpolate(rect.height,end.height,t)}px`;
  layer.style.opacity=(scrollY>storyTop()+vh*.5)?'0':'1';
  const spin=Math.max(0,state-1),fraction=spin%1;
- angle=interpolate(15,-15,t)-180*spin;
- const tilt=interpolate(70,72,t)+18*Math.sin(fraction*Math.PI);
+ angle=interpolate(0,-8,t)-180*spin;
+ const tilt=interpolate(88,82,t)+10*Math.sin(fraction*Math.PI);
  const roll=interpolate(40,-12,t)+30*Math.sin(fraction*Math.PI)+12*Math.sin(fraction*Math.PI*2);
  const radius=interpolate(90,mobile?125:105,t);heroModel.cameraOrbit=`${angle}deg ${tilt}deg ${radius}%`;heroModel.style.transform=`rotate(${roll}deg)`;if(heroModel.jumpCameraToGoal)heroModel.jumpCameraToGoal();
  const titleRect=title.getBoundingClientRect(),target=brand.getBoundingClientRect();const size=parseFloat(getComputedStyle(title).fontSize),brandSize=parseFloat(getComputedStyle(brand).fontSize);
@@ -34,7 +34,7 @@ function paint(state){
  morph.hidden=state===0;title.style.opacity=state===0?'1':'0';heading.querySelector('.eyebrow').style.opacity=String(1-t);
  heroCopy.style.opacity='1';
  const lines=[...heroCopy.querySelectorAll('.line-text')];
- if(lines.length){lines.forEach((line,i)=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());const fade=smooth(i*.07,.45+i*.07,t);line.style.opacity=String(1-fade);line.style.transform=`translateY(${-22*fade}px)`})}
+ if(lines.length){lines.forEach((line,i)=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());const fade=smooth(i*.07,.45+i*.07,t);line.style.opacity=String(1-fade);line.style.transform='none'})}
  else heroCopy.style.opacity=String(1-t);
  updateCards(state);
  brand.style.pointerEvents=t===1?'auto':'none';
@@ -49,7 +49,7 @@ function updateCards(state){
 function tick(now){
  const dt=lastFrame?Math.min(40,now-lastFrame):16;lastFrame=now;
  const distance=targetState-frameState;
- const step=motionReduced?distance:Math.sign(distance)*Math.min(Math.abs(distance)*(1-Math.exp(-dt/85)),.045*dt/16);
+ const step=motionReduced?distance:Math.sign(distance)*Math.min(Math.abs(distance)*(1-Math.exp(-dt/160)),.022*dt/16);
  const state=Math.abs(distance)<.001?targetState:frameState+step;
  lastWrite=performance.now();window.scrollTo({top:storyTop()*Math.min(1,state),behavior:'instant'});paint(state);
  if(Math.abs(targetState-frameState)>.0001)raf=requestAnimationFrame(tick);else{raf=0;lastFrame=0}
@@ -62,7 +62,7 @@ function consume(delta){
  if(y>base+25){if(delta<0){goTo(3);return true}return false}
  if((targetState<=0&&delta<0)||(targetState>=3&&frameState>=2.999&&delta>0))return false;
  // Accumulate every touchpad event, including tiny deltas and inertia.
- goTo(targetState+Math.max(-.32,Math.min(.32,delta/400)));return true;
+ goTo(targetState+Math.max(-.14,Math.min(.14,delta/900)));return true;
 }
 window.addEventListener('wheel',e=>{if(e.ctrlKey||!e.deltaY||Math.abs(e.deltaX)>Math.abs(e.deltaY)||document.body.classList.contains('is-loading'))return;const units=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1;if(consume(e.deltaY*units))e.preventDefault()},{passive:false});
 window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction&&scrollY<=storyTop()+25){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});

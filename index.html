@@ -21,6 +21,17 @@
 .copy{padding-top:0}
 .product,model-viewer{min-height:0}
 @media(max-width:760px){.screen{min-height:0}.hero{padding-top:var(--edge,32px);padding-bottom:var(--edge,32px)}.hero-content{height:100%;grid-template-rows:auto minmax(0,1fr) auto}}
+
+model-viewer::part(default-progress-bar){display:none}
+.cta{min-height:44px;min-width:140px;font-size:14px}
+.menu-toggle{min-height:44px;min-width:64px}
+@media(max-width:760px) and (max-height:740px){
+ .header{padding-top:12px;padding-bottom:12px}
+ h1{font-size:58px}
+ .heading .eyebrow{font-size:13px;margin-bottom:10px}
+ .copy h2{font-size:21px;margin-bottom:10px}
+ .copy p{font-size:14px;line-height:1.35}
+}
 </style>
 </head>
 <body>
@@ -34,7 +45,7 @@
 <main class="hero"><div class="hero-content">
 <div class="heading"><p class="eyebrow" data-type>Dein Weg. Dein Gefühl von Sicherheit.</p><h1 data-type>SafeClick</h1></div>
 <div class="product">
-<model-viewer id="model" src="./assets/metal-capsule.glb" alt="Interaktives SafeClick 3D-Modell. Zum Drehen ziehen, zum Vergrößern scrollen oder zwei Finger verwenden." camera-controls camera-orbit="0deg 85deg 105%" field-of-view="30deg" shadow-intensity="0.25" exposure="1.1" interaction-prompt="none" touch-action="pan-y"></model-viewer>
+<model-viewer id="model" src="./assets/metal-capsule.glb" alt="Interaktives SafeClick 3D-Modell. Zum Drehen ziehen, zum Vergrößern scrollen oder zwei Finger verwenden." camera-controls camera-orbit="0deg 85deg 90%" field-of-view="30deg" shadow-intensity="0.25" exposure="1.1" interaction-prompt="none" touch-action="pan-y"></model-viewer>
 <span class="status" role="status" id="status">3D-Modell wird geladen …</span>
 </div>
 <div class="copy" id="ueber"><h2 data-type>Mehr Freiheit im Alltag – mit SafeClick an deiner Seite.</h2><p data-type>SafeClick ist ein kleines, tragbares Gerät mit Standortübertragung bei Bedarf und SOS-Funktion. Ohne eigenes Smartphone. Du entscheidest, wann du SafeClick aktivierst – im ausgeschalteten Zustand findet keine Standortübertragung statt.</p></div>
@@ -48,7 +59,7 @@ function fitHero(){
  const screen=document.querySelector('.screen'),header=document.querySelector('.header'),heading=document.querySelector('.heading'),copy=document.querySelector('.copy');
  const available=screen.clientHeight-header.getBoundingClientRect().height;
  const textHeight=heading.getBoundingClientRect().height+copy.getBoundingClientRect().height;
- const minimumModel=Math.min(100,Math.max(64,available*.14));
+ const minimumModel=innerWidth<=760?260:310;
  const factor=Math.max(0,Math.min(1,(available-textHeight-minimumModel)/480));
  screen.style.setProperty('--edge',`${160*factor}px`);
  screen.style.setProperty('--model-gap',`${80*factor}px`);

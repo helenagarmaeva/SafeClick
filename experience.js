@@ -11,9 +11,9 @@ const story=document.querySelector('.story'),cards=[...document.querySelectorAll
 const layer=document.createElement('div');layer.className='shared-product';layer.append(heroModel);document.body.append(layer);
 const morph=document.createElement('div');morph.className='brand-morph';morph.textContent='SafeClick';morph.setAttribute('aria-hidden','true');morph.hidden=true;document.body.append(morph);
 heroModel.removeAttribute('camera-controls');heroModel.setAttribute('disable-zoom','');heroModel.setAttribute('disable-pan','');heroModel.setAttribute('tabindex','-1');
-let phase=0,busy=false,angle=0,lastWheel=0,touchY=null,frameState=0;
+let phase=0,angle=15,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0;
 const motionReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
-const duration=motionReduced?0:900,easing='cubic-bezier(.22,1,.36,1)';
+
 function storyTop(){return story.getBoundingClientRect().top+scrollY}
 function interpolate(a,b,t){return a+(b-a)*t}
 function paint(state){
@@ -24,40 +24,50 @@ function paint(state){
  layer.style.left=`${interpolate(rect.left,end.left,t)}px`;layer.style.top=`${interpolate(heroY,end.top,t)}px`;
  layer.style.width=`${interpolate(rect.width,end.width,t)}px`;layer.style.height=`${interpolate(rect.height,end.height,t)}px`;
  layer.style.opacity=(scrollY>storyTop()+vh*.5)?'0':'1';
- const radius=interpolate(90,mobile?125:105,t);heroModel.cameraOrbit=`${angle}deg 85deg ${radius}%`;if(heroModel.jumpCameraToGoal)heroModel.jumpCameraToGoal();
+ const spin=Math.max(0,state-1),fraction=spin%1;
+ angle=interpolate(15,-15,t)-180*spin;
+ const tilt=interpolate(70,72,t)+18*Math.sin(fraction*Math.PI);
+ const roll=interpolate(40,-12,t)+30*Math.sin(fraction*Math.PI)+12*Math.sin(fraction*Math.PI*2);
+ const radius=interpolate(90,mobile?125:105,t);heroModel.cameraOrbit=`${angle}deg ${tilt}deg ${radius}%`;heroModel.style.transform=`rotate(${roll}deg)`;if(heroModel.jumpCameraToGoal)heroModel.jumpCameraToGoal();
  const titleRect=title.getBoundingClientRect(),target=brand.getBoundingClientRect();const size=parseFloat(getComputedStyle(title).fontSize),brandSize=parseFloat(getComputedStyle(brand).fontSize);
  morph.style.left=`${interpolate(titleRect.left,target.left,t)}px`;morph.style.top=`${interpolate(titleRect.top+scrollY,target.top,t)}px`;morph.style.fontSize=`${interpolate(size,brandSize,t)}px`;morph.style.letterSpacing=`${interpolate(-.065*size,-1.2,t)}px`;
- morph.hidden=state===0;title.style.opacity=state===0?'1':'0';heading.querySelector('.eyebrow').style.opacity=String(1-t);heroCopy.style.opacity=String(1-t);
+ morph.hidden=state===0;title.style.opacity=state===0?'1':'0';heading.querySelector('.eyebrow').style.opacity=String(1-t);
+ heroCopy.style.opacity='1';
+ const lines=[...heroCopy.querySelectorAll('.line-text')];
+ if(lines.length){lines.forEach((line,i)=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());const fade=smooth(i*.07,.45+i*.07,t);line.style.opacity=String(1-fade);line.style.transform=`translateY(${-22*fade}px)`})}
+ else heroCopy.style.opacity=String(1-t);
+ updateCards(state);
  brand.style.pointerEvents=t===1?'auto':'none';
  if(scrollY>storyTop()+vh*.7)morph.hidden=true;
 }
-function currentCard(){return phase>0?phase-1:-1}
-function markPhase(){story.dataset.slide=phase?String(phase-1):'hero';document.body.dataset.phase=phase}
-markPhase();paint(0);
-async function goTo(target){
- if(busy||target<0||target>3)return;
- const dest=target===0?0:storyTop();if(target===phase&&Math.abs(scrollY-dest)<3)return;
- busy=true;const fromPhase=frameState,fromAngle=angle,fromY=scrollY,toAngle=-180*Math.max(0,target-1),direction=target>=phase?1:-1;
- const old=currentCard()>=0?cards[currentCard()]:null,incoming=target?cards[target-1]:null,animations=[];
- if(old&&old!==incoming){old.inert=true;old.setAttribute('aria-hidden','true');animations.push(old.animate([{opacity:1,transform:'translateY(-50%)'},{opacity:0,transform:`translateY(calc(-50% - ${direction*60}px))`}],{duration:duration*.65,easing,fill:'forwards'}))}
- if(incoming&&incoming!==old){incoming.classList.add('is-active');incoming.inert=false;incoming.removeAttribute('aria-hidden');animations.push(incoming.animate([{opacity:0,transform:`translateY(calc(-50% + ${direction*60}px))`},{opacity:1,transform:'translateY(-50%)'}],{duration,delay:target===1&&phase===0?duration*.12:0,easing,fill:'backwards'}))}
- const movement=new Promise(resolve=>{const start=performance.now();function tick(now){const u=duration?Math.min(1,(now-start)/duration):1,k=1-Math.pow(1-u,3);angle=interpolate(fromAngle,toAngle,k);window.scrollTo({top:interpolate(fromY,dest,k),behavior:'instant'});paint(interpolate(fromPhase,target,k));if(u<1)requestAnimationFrame(tick);else resolve()}requestAnimationFrame(tick)});
- await Promise.all([movement,...animations.map(a=>a.finished)]);if(old&&old!==incoming)old.classList.remove('is-active');animations.forEach(a=>a.cancel());phase=target;frameState=target;angle=toAngle;markPhase();paint(target);busy=false;
+function smooth(a,b,value){const x=Math.max(0,Math.min(1,(value-a)/(b-a)));return x*x*(3-2*x)}
+function updateCards(state){
+ const weights=[smooth(.32,1,state)*(1-smooth(1.15,2,state)),smooth(1.15,2,state)*(1-smooth(2.15,3,state)),smooth(2.15,3,state)];
+ cards.forEach((card,i)=>{const opacity=weights[i],entered=state>=i+1,offset=entered?-55*(1-opacity):55*(1-opacity);card.style.opacity=String(opacity);card.style.transform=`translateY(calc(-50% + ${offset}px))`;card.style.visibility=opacity>.001?'visible':'hidden';card.inert=opacity<.5;card.setAttribute('aria-hidden',String(opacity<.5));card.style.pointerEvents=opacity>=.5?'auto':'none'});
+ phase=Math.round(state);story.dataset.slide=state<.3?'hero':String(Math.max(0,Math.round(state)-1));document.body.dataset.phase=phase;
 }
-function handleDirection(direction){
- if(busy)return true;
- const y=scrollY,base=storyTop(),vh=innerHeight;
- if(y>base+vh*.7)return false;
- if(y>base+25){if(direction<0){goTo(3);return true}return false}
- if(direction>0&&phase<3){goTo(phase+1);return true}
- if(direction<0&&phase>0){goTo(phase-1);return true}
- return false;
+function tick(now){
+ const dt=lastFrame?Math.min(40,now-lastFrame):16;lastFrame=now;
+ const distance=targetState-frameState;
+ const step=motionReduced?distance:Math.sign(distance)*Math.min(Math.abs(distance)*(1-Math.exp(-dt/85)),.045*dt/16);
+ const state=Math.abs(distance)<.001?targetState:frameState+step;
+ lastWrite=performance.now();window.scrollTo({top:storyTop()*Math.min(1,state),behavior:'instant'});paint(state);
+ if(Math.abs(targetState-frameState)>.0001)raf=requestAnimationFrame(tick);else{raf=0;lastFrame=0}
 }
-window.addEventListener('wheel',e=>{if(e.ctrlKey||Math.abs(e.deltaY)<3||Math.abs(e.deltaX)>Math.abs(e.deltaY)||document.body.classList.contains('is-loading'))return;const now=performance.now(),quiet=now-lastWheel>180;lastWheel=now;if(busy){e.preventDefault();return}if(!quiet){if(scrollY<=storyTop()+25&&!(phase===3&&e.deltaY>0)&&!(phase===0&&e.deltaY<0))e.preventDefault();return}if(handleDirection(Math.sign(e.deltaY)))e.preventDefault()},{passive:false});
-window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction&&handleDirection(direction))e.preventDefault()});
-window.addEventListener('touchstart',e=>{touchY=e.touches[0].clientY},{passive:true});window.addEventListener('touchmove',e=>{if(touchY===null)return;const d=touchY-e.touches[0].clientY;if(Math.abs(d)<28)return;if(busy||handleDirection(Math.sign(d))){e.preventDefault();touchY=null}},{passive:false});window.addEventListener('touchend',()=>{touchY=null},{passive:true});
-window.addEventListener('resize',()=>{if(!busy)paint(phase)});new ResizeObserver(()=>{if(!busy)paint(phase)}).observe(slot);
-// Scrollbar, browser navigation, and anchor links also produce the correct scene.
-window.addEventListener('scroll',()=>{if(busy)return;const base=storyTop();if(scrollY<base*.25&&phase!==0){cards.forEach(c=>{c.classList.remove('is-active');c.inert=true;c.setAttribute('aria-hidden','true')});phase=0;angle=0;markPhase()}else if(Math.abs(scrollY-base)<4&&phase===0){goTo(1)}paint(phase)},{passive:true});
+function goTo(value){targetState=Math.max(0,Math.min(3,value));if(!raf)raf=requestAnimationFrame(tick)}
+paint(0);
+function consume(delta){
+ const base=storyTop(),y=scrollY;
+ if(y>base+innerHeight*.7)return false;
+ if(y>base+25){if(delta<0){goTo(3);return true}return false}
+ if((targetState<=0&&delta<0)||(targetState>=3&&frameState>=2.999&&delta>0))return false;
+ // Accumulate every touchpad event, including tiny deltas and inertia.
+ goTo(targetState+Math.max(-.32,Math.min(.32,delta/400)));return true;
+}
+window.addEventListener('wheel',e=>{if(e.ctrlKey||!e.deltaY||Math.abs(e.deltaX)>Math.abs(e.deltaY)||document.body.classList.contains('is-loading'))return;const units=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1;if(consume(e.deltaY*units))e.preventDefault()},{passive:false});
+window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction&&scrollY<=storyTop()+25){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
+window.addEventListener('touchstart',e=>{touchY=e.touches[0].clientY},{passive:true});window.addEventListener('touchmove',e=>{if(touchY===null)return;const next=e.touches[0].clientY,d=touchY-next;touchY=next;if(consume(d*2))e.preventDefault()},{passive:false});window.addEventListener('touchend',()=>{touchY=null},{passive:true});
+window.addEventListener('resize',()=>paint(frameState));new ResizeObserver(()=>paint(frameState)).observe(slot);
+window.addEventListener('scroll',()=>{if(raf||performance.now()-lastWrite<120)return;const base=storyTop();if(scrollY<base*.25&&frameState>0){targetState=0;paint(0)}else if(Math.abs(scrollY-base)<4&&frameState<1){goTo(1)}else paint(frameState)},{passive:true});
 brand.addEventListener('click',e=>{e.preventDefault();goTo(0)});
 heroModel.addEventListener('error',()=>{document.querySelector('.story-error').hidden=false});

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101211">
+  <meta name="description" content="Metal Capsule — интерактивное исследование 3D-объекта.">
+  <title>Metal Capsule · SafeClick</title>
+  <script type="module" src="./assets/model-viewer.min.js"></script>
+  <style>
+    *{box-sizing:border-box}body{margin:0;background:#101211;color:#eeeae1;font-family:Arial,sans-serif}header{height:88px;padding:0 5vw;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #ffffff20}.brand{font-weight:700;letter-spacing:-.04em;font-size:24px}.tag,.eyebrow{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#a1a79d}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#c4ef8d;margin-right:10px}main{padding:54px 5vw 28px}h1{font-size:clamp(52px,8vw,116px);font-weight:400;letter-spacing:-.07em;line-height:1;margin:18px 0 24px}.intro{display:flex;align-items:end;justify-content:space-between;gap:24px}.intro p{max-width:310px;color:#a1a79d;font-size:14px;line-height:1.7;margin:0 0 28px}.stage{position:relative;border:1px solid #ffffff22;border-radius:4px;background:radial-gradient(ellipse at 50% 45%,#3a4039 0,#222721 40%,#191d19 75%);overflow:hidden}model-viewer{display:block;width:100%;height:clamp(360px,58vh,760px);--poster-color:transparent;--progress-bar-color:#c4ef8d}.corner{position:absolute;left:24px;top:24px;pointer-events:none;color:#c3c8bd;font-size:11px;letter-spacing:.15em}.tools{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 24px;border-top:1px solid #ffffff18}.hint{font-size:12px;color:#a1a79d}.buttons{display:flex;gap:8px}button,a.download{font:inherit;font-size:12px;border:1px solid #ffffff35;border-radius:30px;background:transparent;color:#eeeae1;padding:11px 18px;cursor:pointer;text-decoration:none}button:hover,a.download:hover{background:#ffffff15}button:focus-visible,a:focus-visible{outline:2px solid #c4ef8d;outline-offset:4px}button[aria-pressed=true]{background:#c4ef8d;color:#101211;border-color:#c4ef8d}footer{display:flex;justify-content:space-between;padding-top:24px;font-size:11px;color:#858d80;letter-spacing:.08em}.status{position:absolute;bottom:90px;left:24px;font-size:12px;color:#c4ef8d;pointer-events:none}.status.error{color:#ffd2c0}@media(max-width:640px){header{height:70px}.tag{font-size:9px}main{padding-top:36px}.intro{display:block}.intro p{max-width:100%}.tools{padding:16px}.hint{width:100%;line-height:1.6}.corner{left:16px;top:16px}.buttons{flex-wrap:wrap}footer{gap:16px;font-size:9px}}
+  </style>
+</head>
+<body>
+  <header><span class="brand">safeclick<span style="color:#c4ef8d">.</span></span><span class="tag"><span class="dot"></span>Коллекция объектов / 001</span></header>
+  <main>
+    <div class="eyebrow">Интерактивный 3D-объект</div>
+    <div class="intro"><h1>Metal Capsule</h1><p>Форма. Материал. Детали.<br>Исследуйте объект с любого ракурса — прямо в браузере.</p></div>
+    <section class="stage" aria-label="Просмотр 3D-модели">
+      <model-viewer id="model" src="./assets/metal-capsule.glb" alt="Трёхмерная модель Metal Capsule. Перетаскивайте для вращения, используйте колесо или жест двумя пальцами для масштаба." camera-controls auto-rotate auto-rotate-delay="1500" rotation-per-second="15deg" shadow-intensity="1" exposure="1" camera-orbit="30deg 75deg auto" interaction-prompt="auto" touch-action="pan-y"></model-viewer>
+      <span class="corner">MC—001 &nbsp; / &nbsp; GLB</span>
+      <span class="status" id="status" role="status">Загрузка модели…</span>
+      <div class="tools"><span class="hint">Перетаскивайте для вращения · Приближайте колесом или жестом</span><div class="buttons"><button id="rotate" aria-pressed="true">Автовращение</button><button id="reset">Сбросить вид</button><a class="download" href="./assets/metal-capsule.glb" download>Скачать GLB ↗</a></div></div>
+    </section>
+    <footer><span>SAFECLICK — OBJECT EXPLORER</span><span>01 / METAL CAPSULE</span></footer>
+  </main>
+  <script>
+    const model=document.querySelector('#model'),rotate=document.querySelector('#rotate'),status=document.querySelector('#status');
+    const reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduced){model.removeAttribute('auto-rotate');rotate.setAttribute('aria-pressed','false')}
+    rotate.addEventListener('click',()=>{const active=!model.hasAttribute('auto-rotate');model.toggleAttribute('auto-rotate',active);rotate.setAttribute('aria-pressed',String(active))});
+    document.querySelector('#reset').addEventListener('click',()=>{model.cameraOrbit='30deg 75deg auto';model.cameraTarget='auto auto auto';model.fieldOfView='auto';model.resetTurntableRotation(0)});
+    model.addEventListener('load',()=>{status.textContent=''});
+    model.addEventListener('error',()=>{status.textContent='Не удалось загрузить модель. Обновите страницу или скачайте GLB.';status.classList.add('error')});
+    setTimeout(()=>{if(!customElements.get('model-viewer')){status.textContent='Не удалось загрузить 3D-просмотрщик. Модель можно скачать кнопкой ниже.';status.classList.add('error')}},15000);
+  </script>
+</body>
+</html>

@@ -13,7 +13,7 @@
 .hero{display:flex;align-items:center;justify-content:center;padding-top:24px;padding-bottom:24px}
 .hero-content{width:100%;height:min(740px,100%);display:grid;grid-template-rows:auto minmax(160px,1fr) auto;min-height:0}
 @media(max-width:760px){.hero{padding-top:24px;padding-bottom:24px}.hero-content{height:min(700px,100%);grid-template-rows:auto minmax(200px,1fr) auto}}
-.letter-mask{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.12em;margin-bottom:-.12em}.letter{display:inline-block;transform-origin:bottom left}
+.line-reveal{position:relative}.line-reserve{visibility:hidden}.line-mask{position:absolute;left:-.15em;right:-.15em;padding:0 .15em;overflow:hidden;line-height:1.3;pointer-events:none}.line-text{display:block;white-space:pre}
 
 .screen{height:100svh;min-height:0}
 .hero{padding-top:var(--edge,160px);padding-bottom:var(--edge,160px)}
@@ -59,13 +59,33 @@ fitHero();
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 if(!reduced){
   const ease='cubic-bezier(.16,1,.3,1)';
-  const title=document.querySelector('h1');
-  title.setAttribute('aria-label',title.textContent);
-  title.innerHTML=[...title.textContent].map((letter,index)=>`<span class="letter-mask" aria-hidden="true"><span class="letter" style="--i:${index}">${letter}</span></span>`).join('');
   const animate=(el,frames,options)=>el.animate(frames,{fill:'backwards',easing:ease,...options});
-  title.querySelectorAll('.letter').forEach((el,i)=>animate(el,[{transform:'translateY(115%) rotate(5deg)'},{transform:'translateY(0) rotate(0deg)'}],{duration:1050,delay:160+i*42}));
-  animate(document.querySelector('.heading .eyebrow'),[{clipPath:'inset(100% 0 0 0)',transform:'translateY(16px)',opacity:0},{clipPath:'inset(0% 0 0 0)',transform:'translateY(0)',opacity:1}],{duration:1000,delay:140});
-  document.querySelectorAll('.copy> *').forEach((el,i)=>animate(el,[{clipPath:'inset(100% 0 0 0)',transform:'translateY(30px)',opacity:0},{clipPath:'inset(0% 0 0 0)',transform:'translateY(0)',opacity:1}],{duration:1100,delay:600+i*130}));
+  const textBlocks=[...document.querySelectorAll('[data-type]')];
+  textBlocks.forEach(el=>{el.dataset.original=el.textContent;el.setAttribute('aria-label',el.textContent)});
+  function revealLines(withMotion){
+    textBlocks.forEach(el=>{el.textContent=el.dataset.original});
+    textBlocks.forEach((el,blockIndex)=>{
+      const text=el.textContent,node=el.firstChild,range=document.createRange(),groups=[];
+      for(let i=0;i<text.length;i++){
+        if(/\s/.test(text[i]))continue;
+        range.setStart(node,i);range.setEnd(node,i+1);
+        const rect=range.getBoundingClientRect(),last=groups.at(-1);
+        if(last&&Math.abs(last.top-rect.top)<2)last.end=i+1;
+        else groups.push({top:rect.top,height:rect.height,start:i,end:i+1});
+      }
+      const reserve=document.createElement('span');reserve.className='line-reserve';reserve.textContent=text;reserve.setAttribute('aria-hidden','true');el.replaceChildren(reserve);el.classList.add('line-reveal');
+      const bounds=el.getBoundingClientRect();
+      groups.forEach((group,lineIndex)=>{
+        const mask=document.createElement('span');mask.className='line-mask';mask.setAttribute('aria-hidden','true');const lineHeight=parseFloat(getComputedStyle(el).lineHeight);mask.style.lineHeight=`${lineHeight}px`;mask.style.top=`${group.top-bounds.top-(lineHeight-group.height)/2}px`;
+        const line=document.createElement('span');line.className='line-text';line.textContent=text.slice(group.start,group.end);mask.append(line);el.append(mask);
+        if(withMotion)animate(line,[{transform:'translateY(125%)',opacity:0},{transform:'translateY(0)',opacity:1}],{duration:950,delay:140+blockIndex*160+lineIndex*115});
+      });
+    });
+    fitHero();
+  }
+  revealLines(true);
+  let previousWidth=innerWidth,resizeTimer;
+  window.addEventListener('resize',()=>{if(previousWidth===innerWidth)return;previousWidth=innerWidth;clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>revealLines(false),100)});
   const product=document.querySelector('model-viewer');
   let revealed=false;
   const reveal=()=>{if(revealed)return;revealed=true;animate(product,[{opacity:0,transform:'translateY(36px) scale(.92)',filter:'blur(8px)'},{opacity:1,transform:'translateY(0) scale(1)',filter:'blur(0px)'}],{duration:1500,delay:100})};

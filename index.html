@@ -14,6 +14,13 @@
 .hero-content{width:100%;height:min(740px,100%);display:grid;grid-template-rows:auto minmax(160px,1fr) auto;min-height:0}
 @media(max-width:760px){.hero{padding-top:24px;padding-bottom:24px}.hero-content{height:min(700px,100%);grid-template-rows:auto minmax(200px,1fr) auto}}
 .letter-mask{display:inline-block;overflow:hidden;vertical-align:top;padding-bottom:.12em;margin-bottom:-.12em}.letter{display:inline-block;transform-origin:bottom left}
+
+.screen{height:100svh;min-height:0}
+.hero{padding-top:var(--edge,160px);padding-bottom:var(--edge,160px)}
+.hero-content{height:100%;grid-template-rows:auto minmax(0,1fr) auto;row-gap:var(--model-gap,80px)}
+.copy{padding-top:0}
+.product,model-viewer{min-height:0}
+@media(max-width:760px){.screen{min-height:0}.hero{padding-top:var(--edge,32px);padding-bottom:var(--edge,32px)}.hero-content{height:100%;grid-template-rows:auto minmax(0,1fr) auto}}
 </style>
 </head>
 <body>
@@ -37,6 +44,18 @@
 <section class="legal" aria-label="Rechtliche Informationen"><details id="datenschutz"><summary>Datenschutz</summary><p>Im ausgeschalteten Zustand findet keine Standortübertragung statt. Die vollständige Datenschutzerklärung für diese Website wird ergänzt, sobald die Angaben des Betreibers vorliegen.</p></details><details id="impressum"><summary>Impressum</summary><p>Die rechtlichen Anbieter- und Kontaktangaben für diese Website werden ergänzt, sobald sie vom Betreiber bereitgestellt werden.</p></details></section>
 <footer><span>SafeClick</span><span>Dein Weg. Dein Gefühl von Sicherheit.</span></footer>
 <script>
+function fitHero(){
+ const screen=document.querySelector('.screen'),header=document.querySelector('.header'),heading=document.querySelector('.heading'),copy=document.querySelector('.copy');
+ const available=screen.clientHeight-header.getBoundingClientRect().height;
+ const textHeight=heading.getBoundingClientRect().height+copy.getBoundingClientRect().height;
+ const minimumModel=Math.min(100,Math.max(64,available*.14));
+ const factor=Math.max(0,Math.min(1,(available-textHeight-minimumModel)/480));
+ screen.style.setProperty('--edge',`${160*factor}px`);
+ screen.style.setProperty('--model-gap',`${80*factor}px`);
+}
+const heroObserver=new ResizeObserver(fitHero);
+['.screen','.header','.heading','.copy'].forEach(selector=>heroObserver.observe(document.querySelector(selector)));
+fitHero();
 const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 if(!reduced){
   const ease='cubic-bezier(.16,1,.3,1)';

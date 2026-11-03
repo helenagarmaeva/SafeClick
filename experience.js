@@ -26,9 +26,10 @@ function paint(state){
  layer.style.opacity=(scrollY>storyTop()+vh*.5)?'0':'1';
  const spin=Math.max(0,state-1),fraction=spin%1;
  angle=interpolate(0,-8,t)-180*spin;
- const tilt=interpolate(85,82,t)+10*Math.sin(fraction*Math.PI)+mouseY*2;
- const roll=interpolate(40,-12,t)+30*Math.sin(fraction*Math.PI)+12*Math.sin(fraction*Math.PI*2);
- const radius=interpolate(90,mobile?125:105,t);heroModel.cameraOrbit=`${angle+mouseX*3}deg ${tilt}deg ${radius}%`;heroModel.style.transform=`translate(${mouseX*6}px,${mouseY*4}px) rotate(${roll}deg)`;if(heroModel.jumpCameraToGoal)heroModel.jumpCameraToGoal();
+ const pointerGain=smooth(.9,1,state);
+ const tilt=interpolate(85,82,t)-35*Math.sin(fraction*Math.PI*2)+mouseY*2*pointerGain;
+ const roll=interpolate(40,-12,t)+85*Math.sin(fraction*Math.PI)-10*Math.sin(fraction*Math.PI*2);
+ const radius=interpolate(90,mobile?145:130,t);heroModel.cameraOrbit=`${angle+mouseX*3*pointerGain}deg ${tilt}deg ${radius}%`;heroModel.style.transform=`translate(${mouseX*6*pointerGain}px,${mouseY*4*pointerGain}px) rotate(${roll}deg)`;if(heroModel.jumpCameraToGoal)heroModel.jumpCameraToGoal();
  const titleRect=title.getBoundingClientRect(),target=brand.getBoundingClientRect();const size=parseFloat(getComputedStyle(title).fontSize),brandSize=parseFloat(getComputedStyle(brand).fontSize);
  morph.style.left=`${interpolate(titleRect.left,target.left,t)}px`;morph.style.top=`${interpolate(titleRect.top+scrollY,target.top,t)}px`;morph.style.fontSize=`${interpolate(size,brandSize,t)}px`;morph.style.letterSpacing=`${interpolate(-.065*size,-1.2,t)}px`;
  morph.hidden=state===0;title.style.opacity=state===0?'1':'0';heading.querySelector('.eyebrow').style.opacity=String(1-t);
@@ -78,7 +79,7 @@ function drift(){
  paint(frameState);mouseRaf=requestAnimationFrame(drift);
 }
 if(!motionReduced&&matchMedia('(pointer:fine)').matches){
- window.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;mouseTargetX=(e.clientX/innerWidth-.5)*2;mouseTargetY=(e.clientY/innerHeight-.5)*2;if(!mouseRaf)mouseRaf=requestAnimationFrame(drift)});
+ window.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;if(frameState<1){mouseTargetX=mouseTargetY=0;if(mouseX||mouseY){if(!mouseRaf)mouseRaf=requestAnimationFrame(drift)}return}mouseTargetX=(e.clientX/innerWidth-.5)*2;mouseTargetY=(e.clientY/innerHeight-.5)*2;if(!mouseRaf)mouseRaf=requestAnimationFrame(drift)});
  document.documentElement.addEventListener('pointerleave',()=>{mouseTargetX=mouseTargetY=0;if(!mouseRaf)mouseRaf=requestAnimationFrame(drift)});
 }
 // Duplicate visual lettering only; controls retain one accessible label.

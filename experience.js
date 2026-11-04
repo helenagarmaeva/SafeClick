@@ -29,10 +29,10 @@ function paint(state){
  layer.style.width=`${interpolate(rect.width,end.width,t)}px`;layer.style.height=`${interpolate(rect.height,end.height,t)}px`;
  layer.style.opacity=(scrollY>workflowTop()+vh*.65)?'0':'1';
  const spin=Math.max(0,Math.min(2,state-1)),fraction=spin%1;
- angle=interpolate(interpolate(0,-8,t)-35*Math.sin(spin*Math.PI),0,operation);
+ angle=interpolate(interpolate(interpolate(0,-8,t)-35*Math.sin(spin*Math.PI),0,operation),180,smooth(5,6,state));
  const pointerGain=state>=1?1:0;
  const tilt=interpolate(interpolate(85,82,t)-16*Math.sin(spin*Math.PI*2),85,operation)+mouseY*2*pointerGain;
- const roll=interpolate(interpolate(40,-12,t)+180*spin,360,operation);
+ const roll=interpolate(interpolate(interpolate(40,-12,t)+180*spin,360,operation),540,smooth(5,6,state));
  heroModel.orientation=`${-roll}deg ${28*Math.sin(spin*Math.PI)*(1-operation)}deg 0deg`;
  heroModel.shadowIntensity=0;
  if(heroModel.loaded){heroModel.currentTime=Math.max(0,Math.min(2,state-4));}
@@ -56,7 +56,7 @@ function updateCards(state){
 }
 function updateSteps(state){
  const weights=[smooth(3.25,4,state)*(1-smooth(4.15,5,state)),smooth(4.15,5,state)*(1-smooth(5.15,6,state)),smooth(5.15,6,state)];
- stepPanels.forEach((panel,i)=>{const opacity=weights[i];panel.style.opacity=String(opacity);[...panel.children].forEach(child=>{child.style.opacity=innerWidth<=760?String(opacity):''});panel.style.visibility=opacity>.001?'visible':'hidden';panel.inert=opacity<.5;panel.setAttribute('aria-hidden',String(opacity<.5))});
+ stepPanels.forEach((panel,i)=>{const opacity=weights[i];panel.style.opacity=String(opacity);[...panel.children].forEach(child=>{child.style.opacity=String(opacity)});panel.style.visibility=opacity>.001?'visible':'hidden';panel.inert=opacity<.5;panel.setAttribute('aria-hidden',String(opacity<.5))});
  workflow.dataset.step=String(Math.max(0,Math.min(2,Math.round(state-4))));
 }
 function sceneScroll(state){return storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state)}

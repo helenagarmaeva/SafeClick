@@ -26,3 +26,7 @@ body.is-loading{overflow:hidden}body.is-loading .screen{visibility:hidden}
 body{isolation:isolate}
 .shared-product{z-index:0}
 .hero,.workflow{position:relative;z-index:1}
+/* Step numbers sit behind the product; headings and copy remain above it. */
+.workflow{z-index:auto}
+.workflow-panel{display:contents}
+.step-watermark{z-index:-1}

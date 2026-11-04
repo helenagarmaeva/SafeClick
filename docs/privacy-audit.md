@@ -19,15 +19,18 @@ Company details match https://cesus.tech/impressum/ as retrieved 4 November 2026
 Do not copy the obsolete EU ODR platform paragraph from the corporate imprint: the platform was discontinued in 2025. The separate VSBG statement still needs company confirmation.
 
 ## Before merge/publication
-1. CESUS.tech confirms current address, representatives, register/VAT details, any assigned Wirtschafts-ID, actual rapid/direct communication channel and VSBG statement.
-2. Confirm whether a DPO exists and add contact if applicable.
+1. Current company details confirmed by the user. User requests email-only contact; no additional channel added. Whether actual email handling meets §5 DDG remains a legal/practical assessment, not established by this preference. Confirm any assigned Wirtschafts-ID and the VSBG statement.
+2. User confirms no DPO has been appointed; no DPO contact is included.
 3. Confirm GitHub contractual entity/address, controller/processor roles and applicable Art. 28 arrangement; actual log fields/retention and Art. 44 ff. transfer mechanism/means to obtain safeguards. Do not invent a 7/14/30-day retention period or assume an applicable DPF certification. Consider another host if requirements cannot be met.
-4. Confirm mail provider/recipients, transfers, deletion policy and applicable legal retention periods.
+4. Public DNS lookup on 4 November 2026 returned MX cesus-tech.mail.protection.outlook.com (priority 20), confirming Microsoft mail ingress/protection. This does not establish final mailbox hosting, contracting entity, data region or retention. Confirm these remaining facts, transfers, deletion policy and applicable legal retention periods.
 5. In a clean browser profile with cache disabled, record network and cookie/storage state on initial load, model completion, scroll, Mehr erfahren and OFF/ON/SOS. Include redirects, decoder/texture requests and response Set-Cookie headers. Inspect the GLB JSON for extensions and external image/buffer URIs. Self-host any required decoder dependencies, retaining licenses, or disclose actual recipients/purposes/bases/transfers accurately. Re-test after changes.
 6. Check desktop/mobile and no-JS legal links from initial load and deep links. Remove review paragraphs/draft banners and noindex only after factual/legal sign-off.
 
 ## Future Instagram measurement
 Instagram advertising alone does not install a pixel on this site. If Meta Pixel is later added: assess Art. 6(1)(a) GDPR and §25 TDDDG consent requirements; block marketing scripts AND image/noscript beacons before opt-in; make refusal as easy as acceptance and provide persistent withdrawal; validate no pre-consent requests and no subsequent events after withdrawal. Describe actual Meta entity, events/identifiers, purposes, retention, transfers, applicable joint-controller arrangements and rights. Configure/test PageView and MehrErfahrenClick only after consent. Review Cookiebot separately if selected; it is currently absent and not added by this PR. Distinguish events from unique people. Do not add fictional Meta/Cookiebot sections now.
+
+## Corporate privacy notice comparison
+https://cesus.tech/datenschutz/ identifies Strato as hosting provider for the corporate website and states an AVV exists for that service. It does not identify the email provider or email retention. Do not copy Strato hosting/AVV assertions into the GitHub Pages notice. Corporate privacy notice reviewed 4 November 2026.
 
 ## Sources
 - §5 DDG: https://www.gesetze-im-internet.de/ddg/__5.html

@@ -22,3 +22,7 @@ body.is-loading{overflow:hidden}body.is-loading .screen{visibility:hidden}
  .heading,.hero-copy,.hero>.hero-content>.copy{position:relative;z-index:4}
  .workflow-panel{display:contents}
 }
+/* Persistent product is the lowest content layer on every viewport. */
+body{isolation:isolate}
+.shared-product{z-index:0}
+.hero,.workflow{position:relative;z-index:1}

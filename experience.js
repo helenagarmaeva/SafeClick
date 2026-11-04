@@ -10,6 +10,8 @@ heroModel.addEventListener('progress',e=>showProgress(e.detail.totalProgress));h
 const story=document.querySelector('.story'),cards=[...document.querySelectorAll('.glass-card')],slot=document.querySelector('.product'),heading=document.querySelector('.heading'),heroCopy=document.querySelector('.copy'),title=document.querySelector('h1'),brand=document.querySelector('.header-brand');
 const workflow=document.querySelector('.workflow'),stepPanels=[...document.querySelectorAll('.workflow-panel')];
 function workflowTop(){return workflow.getBoundingClientRect().top+scrollY}
+const colorSection=document.querySelector('.color-stage'),colorHeading=document.querySelector('.color-heading'),colorPicker=document.querySelector('.color-picker'),colorShadow=document.querySelector('.color-shadow');
+function colorsTop(){return colorSection.getBoundingClientRect().top+scrollY}
 const layer=document.createElement('div');layer.className='shared-product';layer.append(heroModel);document.body.append(layer);
 const morph=document.createElement('div');morph.className='brand-morph';morph.textContent='SafeClick';morph.setAttribute('aria-hidden','true');morph.hidden=true;document.body.append(morph);
 heroModel.removeAttribute('camera-controls');heroModel.setAttribute('disable-zoom','');heroModel.setAttribute('disable-pan','');heroModel.setAttribute('tabindex','-1');
@@ -22,17 +24,17 @@ function interpolate(a,b,t){return a+(b-a)*t}
 function paint(state){
  frameState=state;const t=Math.max(0,Math.min(1,state)),rect=slot.getBoundingClientRect(),vh=innerHeight,vw=innerWidth;
  const heroY=rect.top+scrollY;const mobile=vw<=760;
- const operation=smooth(3,4,state);
- const end={left:mobile?vw*.025:vw*.12,top:mobile?interpolate(vh*.09,vh*.2,operation):interpolate(vh*.12,vh*.16,operation),width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
+ const operation=smooth(3,4,state),colorProgress=smooth(6,7,state);
+ const end={left:mobile?vw*.025:vw*.12,top:mobile?interpolate(interpolate(vh*.09,vh*.2,operation),vh*.25,colorProgress):interpolate(interpolate(vh*.12,vh*.16,operation),vh*.23,colorProgress),width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
  // The hero rectangle is in document coordinates so that it does not jump with scroll.
  layer.style.left=`${interpolate(rect.left,end.left,t)}px`;layer.style.top=`${interpolate(heroY,end.top,t)}px`;
  layer.style.width=`${interpolate(rect.width,end.width,t)}px`;layer.style.height=`${interpolate(rect.height,end.height,t)}px`;
- layer.style.opacity=(scrollY>workflowTop()+vh*.65)?'0':'1';
+ layer.style.opacity=(scrollY>colorsTop()+vh*.65)?'0':'1';
  const spin=Math.max(0,Math.min(2,state-1)),fraction=spin%1;
  angle=interpolate(interpolate(interpolate(0,-8,t)-35*Math.sin(spin*Math.PI),0,operation),180,smooth(5,6,state));
  const pointerGain=state>=1?1:0;
  const tilt=interpolate(interpolate(85,82,t)-16*Math.sin(spin*Math.PI*2),85,operation)+mouseY*2*pointerGain;
- const roll=interpolate(interpolate(interpolate(40,-12,t)+180*spin,360,operation),540,smooth(5,6,state));
+ const roll=interpolate(interpolate(interpolate(40,-12,t)+180*spin,360,operation),540,smooth(5,6,state))+360*colorProgress;
  heroModel.orientation=`${-roll}deg ${28*Math.sin(spin*Math.PI)*(1-operation)}deg 0deg`;
  heroModel.shadowIntensity=0;
  if(heroModel.loaded){heroModel.currentTime=Math.max(0,Math.min(2,state-4));}
@@ -45,8 +47,9 @@ function paint(state){
  heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
  updateCards(state);
  updateSteps(state);
+ colorHeading.style.opacity=String(colorProgress);colorPicker.style.opacity=String(colorProgress);colorPicker.inert=colorProgress<.9;colorHeading.style.visibility=colorPicker.style.visibility=colorProgress>.001?'visible':'hidden';colorShadow.style.opacity=String(colorProgress);
  brand.style.pointerEvents=t===1?'auto':'none';
- if(scrollY>workflowTop()+vh*.7)morph.hidden=true;
+ if(scrollY>colorsTop()+vh*.7)morph.hidden=true;
 }
 function smooth(a,b,value){const x=Math.max(0,Math.min(1,(value-a)/(b-a)));return x*x*(3-2*x)}
 function updateCards(state){
@@ -56,10 +59,10 @@ function updateCards(state){
 }
 function updateSteps(state){
  const weights=[smooth(3.25,4,state)*(1-smooth(4.15,5,state)),smooth(4.15,5,state)*(1-smooth(5.15,6,state)),smooth(5.15,6,state)];
- stepPanels.forEach((panel,i)=>{const opacity=weights[i];panel.style.opacity=String(opacity);[...panel.children].forEach(child=>{child.style.opacity=String(opacity)});panel.style.visibility=opacity>.001?'visible':'hidden';panel.inert=opacity<.5;panel.setAttribute('aria-hidden',String(opacity<.5))});
+ stepPanels.forEach((panel,i)=>{const opacity=weights[i]*(1-smooth(6,7,state));panel.style.opacity=String(opacity);[...panel.children].forEach(child=>{child.style.opacity=String(opacity)});panel.style.visibility=opacity>.001?'visible':'hidden';panel.inert=opacity<.5;panel.setAttribute('aria-hidden',String(opacity<.5))});
  workflow.dataset.step=String(Math.max(0,Math.min(2,Math.round(state-4))));
 }
-function sceneScroll(state){return storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state)}
+function sceneScroll(state){return storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state)+(colorsTop()-workflowTop())*smooth(6,7,state)}
 function tick(now){
  const dt=lastFrame?Math.min(40,now-lastFrame):16;lastFrame=now;
  const distance=targetState-frameState;
@@ -68,20 +71,21 @@ function tick(now){
  lastWrite=performance.now();window.scrollTo({top:sceneScroll(state),behavior:'instant'});paint(state);
  if(Math.abs(targetState-frameState)>.0001)raf=requestAnimationFrame(tick);else{raf=0;lastFrame=0}
 }
-function goTo(value){targetState=Math.max(0,Math.min(6,value));if(!raf)raf=requestAnimationFrame(tick)}
+function goTo(value){targetState=Math.max(0,Math.min(7,value));if(!raf)raf=requestAnimationFrame(tick)}
 paint(0);
 function consume(delta){
- const end=workflowTop(),y=scrollY;
+ const end=colorsTop(),y=scrollY;
  if(y>end+innerHeight*.7)return false;
- if(y>end+25){if(delta<0){goTo(6);return true}return false}
- if((targetState<=0&&delta<0)||(targetState>=6&&frameState>=5.999&&delta>0))return false;
+ if(y>end+25){if(delta<0){goTo(7);return true}return false}
+ if((targetState<=0&&delta<0)||(targetState>=7&&frameState>=6.999&&delta>0))return false;
  goTo(targetState+Math.max(-.14,Math.min(.14,delta/900)));return true;
 }
 window.addEventListener('wheel',e=>{if(e.ctrlKey||!e.deltaY||Math.abs(e.deltaX)>Math.abs(e.deltaY)||document.body.classList.contains('is-loading'))return;const units=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1;if(consume(e.deltaY*units))e.preventDefault()},{passive:false});
-window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction&&scrollY<=workflowTop()+25){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
+window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction&&scrollY<=colorsTop()+25){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
 window.addEventListener('touchstart',e=>{touchY=e.touches[0].clientY},{passive:true});window.addEventListener('touchmove',e=>{if(touchY===null)return;const next=e.touches[0].clientY,d=touchY-next;touchY=next;if(consume(d*2))e.preventDefault()},{passive:false});window.addEventListener('touchend',()=>{touchY=null},{passive:true});
-window.addEventListener('resize',()=>paint(frameState));new ResizeObserver(()=>paint(frameState)).observe(slot);
-window.addEventListener('scroll',()=>{if(raf||performance.now()-lastWrite<120)return;const base=storyTop();if(scrollY<base*.25&&frameState>0){targetState=0;paint(0)}else if(Math.abs(scrollY-workflowTop())<4&&frameState<4){goTo(4)}else if(Math.abs(scrollY-base)<4&&frameState<1){goTo(1)}else paint(frameState)},{passive:true});
+let sceneEndBeforeResize=colorsTop();
+window.addEventListener('resize',()=>{const inScene=scrollY<=sceneEndBeforeResize+32;sceneEndBeforeResize=colorsTop();if(inScene&&!raf){lastWrite=performance.now();window.scrollTo({top:sceneScroll(frameState),behavior:'instant'})}paint(frameState)});new ResizeObserver(()=>paint(frameState)).observe(slot);
+window.addEventListener('scroll',()=>{if(raf||performance.now()-lastWrite<120)return;const base=storyTop();if(scrollY<base*.25&&frameState>0){targetState=0;paint(0)}else if(Math.abs(scrollY-colorsTop())<4&&frameState<7){goTo(7)}else if(Math.abs(scrollY-workflowTop())<4&&frameState<4){goTo(4)}else if(Math.abs(scrollY-base)<4&&frameState<1){goTo(1)}else paint(frameState)},{passive:true});
 brand.addEventListener('click',e=>{e.preventDefault();goTo(0)});
 heroModel.addEventListener('error',()=>{document.querySelector('.story-error').hidden=false});
 
@@ -107,3 +111,15 @@ document.querySelectorAll('a:not(.header-brand),button,summary').forEach(control
  }
  control.replaceChildren(wrap);control.classList.add('roll-control');
 });
+
+const finishes={black:{name:'Schwarz',hex:'#292b2d'},rose:{name:'Rosé',hex:'#bd9693'},silver:{name:'Silber',hex:null},green:{name:'Limettengrün',hex:'#a1b745'},blue:{name:'Blaugrau',hex:'#526d7d'}};
+let selectedFinish='silver',originalFinishes=[];
+function applyFinish(){
+ const finish=finishes[selectedFinish];
+ for(const {material,color,metallic,roughness} of originalFinishes){const pbr=material.pbrMetallicRoughness;pbr.setBaseColorFactor(finish.hex||color);pbr.setMetallicFactor(finish.hex?(material.name.includes('textile')?0:.85):metallic);pbr.setRoughnessFactor(finish.hex?(material.name.includes('textile')?.86:selectedFinish==='black'?.62:.52):roughness)}
+ document.querySelectorAll('.color-swatch').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.color===selectedFinish)));
+ document.querySelector('.color-name').textContent=finish.name;
+}
+function rememberFinishes(){originalFinishes=heroModel.model.materials.filter(material=>material.name!=='Recessed dark hardware').map(material=>({material,color:[...material.pbrMetallicRoughness.baseColorFactor],metallic:material.pbrMetallicRoughness.metallicFactor,roughness:material.pbrMetallicRoughness.roughnessFactor}));applyFinish()}
+heroModel.addEventListener('load',rememberFinishes,{once:true});if(heroModel.loaded)rememberFinishes();
+document.querySelectorAll('.color-swatch').forEach(button=>button.addEventListener('click',()=>{selectedFinish=button.dataset.color;applyFinish()}));

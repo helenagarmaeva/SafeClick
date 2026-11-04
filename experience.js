@@ -56,7 +56,7 @@ function updateCards(state){
 }
 function updateSteps(state){
  const weights=[smooth(3.25,4,state)*(1-smooth(4.15,5,state)),smooth(4.15,5,state)*(1-smooth(5.15,6,state)),smooth(5.15,6,state)];
- stepPanels.forEach((panel,i)=>{const opacity=weights[i];panel.style.opacity=String(opacity);panel.style.visibility=opacity>.001?'visible':'hidden';panel.inert=opacity<.5;panel.setAttribute('aria-hidden',String(opacity<.5))});
+ stepPanels.forEach((panel,i)=>{const opacity=weights[i];panel.style.opacity=String(opacity);[...panel.children].forEach(child=>{child.style.opacity=innerWidth<=760?String(opacity):''});panel.style.visibility=opacity>.001?'visible':'hidden';panel.inert=opacity<.5;panel.setAttribute('aria-hidden',String(opacity<.5))});
  workflow.dataset.step=String(Math.max(0,Math.min(2,Math.round(state-4))));
 }
 function sceneScroll(state){return storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state)}

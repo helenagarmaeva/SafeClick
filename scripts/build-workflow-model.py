@@ -15,10 +15,10 @@ def accessor(values,kind,count,minimum=None,maximum=None):
  item={'bufferView':view,'componentType':5126,'count':count,'type':kind}
  if minimum is not None:item.update(min=minimum,max=maximum)
  index=len(doc.setdefault('accessors',[]));doc['accessors'].append(item);return index
-clock=accessor([0,1,2,2.1],'SCALAR',4,[0],[2.1])
-rotation=accessor([0,0,0,1,1,0,0,0,0,0,0,-1,0,0,0,-1],'VEC4',4)
-close=accessor([0,0,0,0,0,0,.00183,0,0,.00183,0,0],'VEC3',4)
-rear=accessor([0,0,0,0,0,0,-.00063,0,0,-.00063,0,0],'VEC3',4)
+clock=accessor([0,1,2,3,3.1],'SCALAR',5,[0],[3.1])
+rotation=accessor([0,0,0,1,0,0,0,1,1,0,0,0,0,0,0,-1,0,0,0,-1],'VEC4',5)
+close=accessor([.00183,0,0,0,0,0,0,0,0,.00183,0,0,.00183,0,0],'VEC3',5)
+rear=accessor([-.00063,0,0,0,0,0,0,0,0,-.00063,0,0,-.00063,0,0],'VEC3',5)
 anim={'name':'Device workflow','samplers':[],'channels':[]}
 def channel(node,path,output):
  i=len(anim['samplers']);anim['samplers'].append({'input':clock,'output':output,'interpolation':'LINEAR'});anim['channels'].append({'sampler':i,'target':{'node':node,'path':path}})

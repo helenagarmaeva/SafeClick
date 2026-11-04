@@ -10,6 +10,7 @@ heroModel.addEventListener('progress',e=>showProgress(e.detail.totalProgress));h
 const story=document.querySelector('.story'),cards=[...document.querySelectorAll('.glass-card')],slot=document.querySelector('.product'),heading=document.querySelector('.heading'),heroCopy=document.querySelector('.copy'),title=document.querySelector('h1'),brand=document.querySelector('.header-brand');
 const workflow=document.querySelector('.workflow'),stepPanels=[...document.querySelectorAll('.workflow-panel')];
 function workflowTop(){return workflow.getBoundingClientRect().top+scrollY}
+const heroPicker=document.querySelector('.hero-color-picker');
 const colorSection=document.querySelector('.color-stage'),colorHeading=document.querySelector('.color-heading'),colorPicker=document.querySelector('.color-picker'),colorShadow=document.querySelector('.color-shadow');
 function colorsTop(){return colorSection.getBoundingClientRect().top+scrollY}
 const layer=document.createElement('div');layer.className='shared-product';layer.append(heroModel);document.body.append(layer);
@@ -28,7 +29,7 @@ function paint(state){
  const end={left:mobile?vw*.025:vw*.12,top:mobile?interpolate(interpolate(vh*.09,vh*.2,operation),vh*.25,colorProgress):interpolate(interpolate(vh*.12,vh*.16,operation),vh*.23,colorProgress),width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
  // The hero rectangle is in document coordinates so that it does not jump with scroll.
  layer.style.left=`${interpolate(rect.left,end.left,t)}px`;layer.style.top=`${interpolate(heroY,end.top,t)}px`;
- layer.style.width=`${interpolate(rect.width,end.width,t)}px`;layer.style.height=`${interpolate(rect.height,end.height,t)}px`;
+ layer.style.width=`${interpolate(rect.width,end.width,t)}px`;layer.style.height=`${interpolate(Math.max(80,rect.height-86),end.height,t)}px`;
  layer.style.opacity=(scrollY>colorsTop()+vh*.65)?'0':'1';
  const spin=Math.max(0,Math.min(2,state-1)),fraction=spin%1;
  angle=interpolate(interpolate(0,-8,t)-35*Math.sin(spin*Math.PI),0,operation);
@@ -37,7 +38,7 @@ function paint(state){
  const roll=interpolate(interpolate(40,-12,t)+180*spin,360,operation)+360*colorProgress;
  heroModel.orientation=`${-roll}deg ${28*Math.sin(spin*Math.PI)*(1-operation)}deg 0deg`;
  heroModel.shadowIntensity=0;
- if(heroModel.loaded){heroModel.currentTime=Math.max(0,Math.min(2,state-4));}
+ if(heroModel.loaded){heroModel.currentTime=Math.max(0,Math.min(3,state-3));}
  const radius=interpolate(90,mobile?145:130,t);heroModel.cameraOrbit=`${angle+mouseX*3*pointerGain}deg ${tilt}deg ${radius}%`;heroModel.style.transform=`translate(${mouseX*6*pointerGain}px,${mouseY*4*pointerGain}px) rotate(0deg)`;if(heroModel.jumpCameraToGoal)heroModel.jumpCameraToGoal();
  const titleRect=title.getBoundingClientRect(),target=brand.getBoundingClientRect();const size=parseFloat(getComputedStyle(title).fontSize),brandSize=parseFloat(getComputedStyle(brand).fontSize);
  morph.style.left=`${interpolate(titleRect.left,target.left,t)}px`;morph.style.top=`${interpolate(titleRect.top+scrollY,target.top,t)}px`;morph.style.fontSize=`${interpolate(size,brandSize,t)}px`;morph.style.letterSpacing=`${interpolate(-.065*size,-1.2,t)}px`;
@@ -45,6 +46,7 @@ function paint(state){
  heroCopy.style.opacity=String(1-smooth(.02,.85,t));
  // Entry masks never animate during exit: fade the complete paragraph block.
  heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
+ heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
  updateCards(state);
  updateSteps(state);
  colorHeading.style.opacity=String(colorProgress);colorPicker.style.opacity=String(colorProgress);colorPicker.inert=colorProgress<.9;colorHeading.style.visibility=colorPicker.style.visibility=colorProgress>.001?'visible':'hidden';colorShadow.style.opacity=String(colorProgress);
@@ -120,7 +122,7 @@ function applyFinish(){
  const locks=heroModel.model?.materials.find(material=>material.name==='Aluminum with printed lock symbols');
  if(locks){const highlight=(selectedFinish==='black'||selectedFinish==='blue')&&lockHighlightTexture;locks.emissiveTexture.setTexture(highlight||null);locks.setEmissiveFactor(highlight?[.32,.36,.40]:[0,0,0])}
  document.querySelectorAll('.color-swatch').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.color===selectedFinish)));
- document.querySelector('.color-name').textContent=finish.name;
+ document.querySelectorAll('.color-name').forEach(label=>{label.textContent=finish.name});
 }
 function rememberFinishes(){originalFinishes=heroModel.model.materials.filter(material=>material.name!=='Recessed dark hardware').map(material=>({material,color:[...material.pbrMetallicRoughness.baseColorFactor],metallic:material.pbrMetallicRoughness.metallicFactor,roughness:material.pbrMetallicRoughness.roughnessFactor}));applyFinish();prepareLockHighlight().catch(error=>console.error('Lock highlights failed',error))}
 heroModel.addEventListener('load',rememberFinishes,{once:true});if(heroModel.loaded)rememberFinishes();

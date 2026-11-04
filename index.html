@@ -33,7 +33,7 @@ model-viewer::part(default-progress-bar){display:none}
  .copy p{font-size:14px;line-height:1.35}
 }
 </style>
-<link rel="stylesheet" href="./experience.css?v=light-locks-10">
+<link rel="stylesheet" href="./experience.css?v=hero-colors-closed-11">
 <noscript><style>.page-loader{display:none}</style></noscript>
 </head>
 <body>
@@ -48,7 +48,14 @@ model-viewer::part(default-progress-bar){display:none}
 <main class="hero"><div class="hero-content">
 <div class="heading"><p class="eyebrow" data-type>Dein Weg. Dein Gefühl von Sicherheit.</p><h1 data-type>SafeClick</h1></div>
 <div class="product">
-<model-viewer id="model" src="./assets/metal-capsule-workflow.glb?v=light-locks-10" alt="SafeClick 3D-Produkt. Die Ansicht folgt dem Seitenverlauf." disable-zoom disable-pan camera-orbit="0deg 85deg 90%" field-of-view="30deg" shadow-intensity="0" exposure="1.1" interaction-prompt="none" touch-action="pan-y"></model-viewer>
+<model-viewer id="model" src="./assets/metal-capsule-workflow.glb?v=hero-colors-closed-11" alt="SafeClick 3D-Produkt. Die Ansicht folgt dem Seitenverlauf." disable-zoom disable-pan camera-orbit="0deg 85deg 90%" field-of-view="30deg" shadow-intensity="0" exposure="1.1" interaction-prompt="none" touch-action="pan-y"></model-viewer>
+<div class="hero-color-picker"><div class="color-options" role="group" aria-label="Produktfarbe auf der Startseite auswählen">
+  <button class="color-swatch" type="button" data-color="black" aria-label="Schwarz" aria-pressed="false" style="--swatch:#292b2d"></button>
+  <button class="color-swatch" type="button" data-color="rose" aria-label="Rosé" aria-pressed="false" style="--swatch:#bd9693"></button>
+  <button class="color-swatch" type="button" data-color="silver" aria-label="Silber" aria-pressed="true" style="--swatch:#c3c6c7"></button>
+  <button class="color-swatch" type="button" data-color="green" aria-label="Limettengrün" aria-pressed="false" style="--swatch:#a1b745"></button>
+  <button class="color-swatch" type="button" data-color="blue" aria-label="Blaugrau" aria-pressed="false" style="--swatch:#526d7d"></button>
+ </div><p class="color-name" role="status" aria-live="polite">Silber</p></div>
 <span class="status" role="status" id="status">3D-Modell wird geladen …</span>
 </div>
 <div class="copy" id="ueber"><h2 data-type>Mehr Freiheit im Alltag – mit SafeClick an deiner Seite.</h2><p data-type>SafeClick ist ein kleines, tragbares Gerät mit Standortübertragung bei Bedarf und SOS-Funktion. Ohne eigenes Smartphone. Du entscheidest, wann du SafeClick aktivierst – im ausgeschalteten Zustand findet keine Standortübertragung statt.</p></div>
@@ -89,7 +96,7 @@ function fitHero(){
  const screen=document.querySelector('.screen'),header=document.querySelector('.header'),heading=document.querySelector('.heading'),copy=document.querySelector('.copy');
  const available=screen.clientHeight;
  const textHeight=heading.getBoundingClientRect().height+copy.getBoundingClientRect().height;
- const minimumModel=innerWidth<=760?260:310;
+ const minimumModel=innerWidth<=760?340:390;
  let top=Math.min(160,Math.max(96,available*.16)),bottom=Math.max(32,Math.min(80,available*.08));
  let free=available-textHeight-minimumModel-top-bottom;
  if(free<0){const d=Math.min(top-88,-free);top-=d;free+=d}
@@ -140,6 +147,6 @@ document.addEventListener('site-ready',startEntrance,{once:true});
 const model=document.querySelector('#model'),status=document.querySelector('#status');model.addEventListener('load',()=>{status.hidden=true});model.addEventListener('error',()=>{status.textContent='Das 3D-Modell konnte nicht geladen werden. Bitte lade die Seite erneut.'});
 const toggle=document.querySelector('.menu-toggle'),nav=document.querySelector('.nav');toggle.addEventListener('click',()=>{const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));nav.classList.toggle('open',open)});nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');toggle.setAttribute('aria-expanded','false')}));document.addEventListener('keydown',e=>{if(e.key==='Escape'){nav.classList.remove('open');toggle.setAttribute('aria-expanded','false')}});document.querySelectorAll('a[href="#datenschutz"],a[href="#impressum"]').forEach(a=>a.addEventListener('click',()=>{document.querySelector(a.getAttribute('href')).open=true}));
 </script>
-<script src="./experience.js?v=light-locks-10"></script>
+<script src="./experience.js?v=hero-colors-closed-11"></script>
 </body>
 </html>

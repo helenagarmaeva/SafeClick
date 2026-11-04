@@ -19,7 +19,7 @@ function interpolate(a,b,t){return a+(b-a)*t}
 function paint(state){
  frameState=state;const t=Math.max(0,Math.min(1,state)),rect=slot.getBoundingClientRect(),vh=innerHeight,vw=innerWidth;
  const heroY=rect.top+scrollY;const mobile=vw<=760;
- const end={left:mobile?vw*.025:vw*.12,top:mobile?(vh<700?145:Math.max(185,vh*.20)):vh*.15,width:mobile?vw*.95:vw*.76,height:mobile?(vh<700?vh*.22:Math.min(240,vh*.29)):vh*.65};
+ const end={left:mobile?vw*.025:vw*.12,top:mobile?vh*.09:vh*.12,width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
  // The hero rectangle is in document coordinates so that it does not jump with scroll.
  layer.style.left=`${interpolate(rect.left,end.left,t)}px`;layer.style.top=`${interpolate(heroY,end.top,t)}px`;
  layer.style.width=`${interpolate(rect.width,end.width,t)}px`;layer.style.height=`${interpolate(rect.height,end.height,t)}px`;

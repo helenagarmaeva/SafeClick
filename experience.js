@@ -113,13 +113,28 @@ document.querySelectorAll('a:not(.header-brand),button,summary').forEach(control
 });
 
 const finishes={black:{name:'Schwarz',hex:'#292b2d'},rose:{name:'Rosé',hex:'#bd9693'},silver:{name:'Silber',hex:null},green:{name:'Limettengrün',hex:'#a1b745'},blue:{name:'Blaugrau',hex:'#526d7d'}};
-let selectedFinish='silver',originalFinishes=[];
+let selectedFinish='silver',originalFinishes=[],lockHighlightTexture=null,lockHighlightPromise=null;
 function applyFinish(){
  const finish=finishes[selectedFinish];
  for(const {material,color,metallic,roughness} of originalFinishes){const pbr=material.pbrMetallicRoughness;pbr.setBaseColorFactor(finish.hex||color);pbr.setMetallicFactor(finish.hex?(material.name.includes('textile')?0:.85):metallic);pbr.setRoughnessFactor(finish.hex?(material.name.includes('textile')?.86:selectedFinish==='black'?.62:.52):roughness)}
+ const locks=heroModel.model?.materials.find(material=>material.name==='Aluminum with printed lock symbols');
+ if(locks){const highlight=(selectedFinish==='black'||selectedFinish==='blue')&&lockHighlightTexture;locks.emissiveTexture.setTexture(highlight||null);locks.setEmissiveFactor(highlight?[.32,.36,.40]:[0,0,0])}
  document.querySelectorAll('.color-swatch').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.color===selectedFinish)));
  document.querySelector('.color-name').textContent=finish.name;
 }
-function rememberFinishes(){originalFinishes=heroModel.model.materials.filter(material=>material.name!=='Recessed dark hardware').map(material=>({material,color:[...material.pbrMetallicRoughness.baseColorFactor],metallic:material.pbrMetallicRoughness.metallicFactor,roughness:material.pbrMetallicRoughness.roughnessFactor}));applyFinish()}
+function rememberFinishes(){originalFinishes=heroModel.model.materials.filter(material=>material.name!=='Recessed dark hardware').map(material=>({material,color:[...material.pbrMetallicRoughness.baseColorFactor],metallic:material.pbrMetallicRoughness.metallicFactor,roughness:material.pbrMetallicRoughness.roughnessFactor}));applyFinish();prepareLockHighlight().catch(error=>console.error('Lock highlights failed',error))}
 heroModel.addEventListener('load',rememberFinishes,{once:true});if(heroModel.loaded)rememberFinishes();
 document.querySelectorAll('.color-swatch').forEach(button=>button.addEventListener('click',()=>{selectedFinish=button.dataset.color;applyFinish()}));
+
+// Only the printed glyph pixels receive a light gray contribution on dark finishes.
+function prepareLockHighlight(){
+ if(lockHighlightPromise)return lockHighlightPromise;
+ lockHighlightPromise=(async()=>{
+  const image=new Image();image.src='./assets/collar-locks-source.png';await image.decode();
+  const canvas=document.createElement('canvas');canvas.width=image.naturalWidth;canvas.height=image.naturalHeight;
+  const context=canvas.getContext('2d',{willReadFrequently:true});context.drawImage(image,0,0);
+  const pixels=context.getImageData(0,0,canvas.width,canvas.height);
+  for(let i=0;i<pixels.data.length;i+=4){const value=Math.round(255*Math.max(0,Math.min(1,(155-pixels.data[i])/45)));pixels.data[i]=pixels.data[i+1]=pixels.data[i+2]=value;pixels.data[i+3]=255}
+  context.putImageData(pixels,0,0);lockHighlightTexture=await heroModel.createTexture(canvas.toDataURL('image/png'));applyFinish();
+ })();return lockHighlightPromise;
+}

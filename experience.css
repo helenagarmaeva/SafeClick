@@ -27,5 +27,5 @@ body.is-loading{overflow:hidden}body.is-loading .screen{visibility:hidden}
 
 /* Keep fixed navigation readable over photos with a soft fade into the page. */
 .header{isolation:isolate}
-.header::before{content:"";position:absolute;inset:0 0 -64px;z-index:-1;pointer-events:none;background:linear-gradient(to bottom,var(--paper) 0%,var(--paper) 52%,rgba(241,240,248,.94) 65%,rgba(241,240,248,.55) 82%,rgba(241,240,248,0) 100%)}
-@media(max-width:760px){.header::before{bottom:-48px}}
+.header::before{content:"";position:absolute;inset:0 0 auto;height:calc(50% + 32px);z-index:-1;pointer-events:none;background:linear-gradient(to bottom,rgba(241,240,248,.98) 0%,rgba(241,240,248,.9) 25%,rgba(241,240,248,.6) 50%,rgba(241,240,248,.2) 75%,rgba(241,240,248,0) 100%)}
+@media(max-width:760px){.header::before{height:calc(50% + 24px)}}

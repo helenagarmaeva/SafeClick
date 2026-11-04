@@ -31,10 +31,10 @@ function paint(state){
  layer.style.width=`${interpolate(rect.width,end.width,t)}px`;layer.style.height=`${interpolate(rect.height,end.height,t)}px`;
  layer.style.opacity=(scrollY>colorsTop()+vh*.65)?'0':'1';
  const spin=Math.max(0,Math.min(2,state-1)),fraction=spin%1;
- angle=interpolate(interpolate(interpolate(0,-8,t)-35*Math.sin(spin*Math.PI),0,operation),180,smooth(5,6,state));
+ angle=interpolate(interpolate(0,-8,t)-35*Math.sin(spin*Math.PI),0,operation);
  const pointerGain=state>=1?1:0;
  const tilt=interpolate(interpolate(85,82,t)-16*Math.sin(spin*Math.PI*2),85,operation)+mouseY*2*pointerGain;
- const roll=interpolate(interpolate(interpolate(40,-12,t)+180*spin,360,operation),540,smooth(5,6,state))+360*colorProgress;
+ const roll=interpolate(interpolate(40,-12,t)+180*spin,360,operation)+360*colorProgress;
  heroModel.orientation=`${-roll}deg ${28*Math.sin(spin*Math.PI)*(1-operation)}deg 0deg`;
  heroModel.shadowIntensity=0;
  if(heroModel.loaded){heroModel.currentTime=Math.max(0,Math.min(2,state-4));}

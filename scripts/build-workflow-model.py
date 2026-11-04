@@ -16,7 +16,7 @@ def accessor(values,kind,count,minimum=None,maximum=None):
  if minimum is not None:item.update(min=minimum,max=maximum)
  index=len(doc.setdefault('accessors',[]));doc['accessors'].append(item);return index
 clock=accessor([0,1,2,2.1],'SCALAR',4,[0],[2.1])
-rotation=accessor([0,0,0,1,1,0,0,0,1,0,0,0,1,0,0,0],'VEC4',4)
+rotation=accessor([0,0,0,1,1,0,0,0,0,0,0,-1,0,0,0,-1],'VEC4',4)
 close=accessor([0,0,0,0,0,0,.00183,0,0,.00183,0,0],'VEC3',4)
 rear=accessor([0,0,0,0,0,0,-.00063,0,0,-.00063,0,0],'VEC3',4)
 anim={'name':'Device workflow','samplers':[],'channels':[]}

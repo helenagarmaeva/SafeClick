@@ -19,7 +19,7 @@ function interpolate(a,b,t){return a+(b-a)*t}
 function paint(state){
  frameState=state;const t=Math.max(0,Math.min(1,state)),rect=slot.getBoundingClientRect(),vh=innerHeight,vw=innerWidth;
  const heroY=rect.top+scrollY;const mobile=vw<=760;
- const end={left:mobile?vw*.025:vw*.12,top:mobile?vh*.09:vh*.12,width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
+ const end={left:mobile?vw*.025:vw*.12,top:mobile?(vh<700?145:Math.max(185,vh*.20)):vh*.15,width:mobile?vw*.95:vw*.76,height:mobile?(vh<700?vh*.22:Math.min(240,vh*.29)):vh*.65};
  // The hero rectangle is in document coordinates so that it does not jump with scroll.
  layer.style.left=`${interpolate(rect.left,end.left,t)}px`;layer.style.top=`${interpolate(heroY,end.top,t)}px`;
  layer.style.width=`${interpolate(rect.width,end.width,t)}px`;layer.style.height=`${interpolate(rect.height,end.height,t)}px`;
@@ -46,6 +46,7 @@ function smooth(a,b,value){const x=Math.max(0,Math.min(1,(value-a)/(b-a)));retur
 function updateCards(state){
  const weights=[smooth(.32,1,state)*(1-smooth(1.15,2,state)),smooth(1.15,2,state)*(1-smooth(2.15,3,state)),smooth(2.15,3,state)];
  cards.forEach((card,i)=>{const opacity=weights[i],entered=state>=i+1,offset=entered?-55*(1-opacity):55*(1-opacity);card.style.opacity=String(opacity);card.style.transform=`translateY(calc(-50% + ${offset}px))`;card.style.visibility=opacity>.001?'visible':'hidden';card.inert=opacity<.5;card.setAttribute('aria-hidden',String(opacity<.5));card.style.pointerEvents=opacity>=.5?'auto':'none'});
+ document.querySelectorAll('[data-state]').forEach(button=>button.setAttribute('aria-pressed',String(Math.round(state)===Number(button.dataset.state))));
  phase=Math.round(state);story.dataset.slide=state<.3?'hero':String(Math.max(0,Math.round(state)-1));document.body.dataset.phase=phase;
 }
 function tick(now){
@@ -67,8 +68,8 @@ function consume(delta){
  goTo(targetState+Math.max(-.14,Math.min(.14,delta/900)));return true;
 }
 window.addEventListener('wheel',e=>{if(e.ctrlKey||!e.deltaY||Math.abs(e.deltaX)>Math.abs(e.deltaY)||document.body.classList.contains('is-loading'))return;const units=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1;if(consume(e.deltaY*units))e.preventDefault()},{passive:false});
-window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction&&scrollY<=storyTop()+25){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
-window.addEventListener('touchstart',e=>{touchY=e.touches[0].clientY},{passive:true});window.addEventListener('touchmove',e=>{if(touchY===null)return;const next=e.touches[0].clientY,d=touchY-next;touchY=next;if(consume(d*2))e.preventDefault()},{passive:false});window.addEventListener('touchend',()=>{touchY=null},{passive:true});
+window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary,a,[contenteditable=true]'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction&&scrollY<=storyTop()+25){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
+window.addEventListener('touchstart',e=>{touchY=e.target.closest('.nav,.glass-card,button,summary,a')?null:e.touches[0].clientY},{passive:true});window.addEventListener('touchmove',e=>{if(touchY===null)return;const next=e.touches[0].clientY,d=touchY-next;touchY=next;if(consume(d*2))e.preventDefault()},{passive:false});window.addEventListener('touchend',()=>{touchY=null},{passive:true});
 window.addEventListener('resize',()=>paint(frameState));new ResizeObserver(()=>paint(frameState)).observe(slot);
 window.addEventListener('scroll',()=>{if(raf||performance.now()-lastWrite<120)return;const base=storyTop();if(scrollY<base*.25&&frameState>0){targetState=0;paint(0)}else if(Math.abs(scrollY-base)<4&&frameState<1){goTo(1)}else paint(frameState)},{passive:true});
 brand.addEventListener('click',e=>{e.preventDefault();goTo(0)});
@@ -96,3 +97,10 @@ document.querySelectorAll('a:not(.header-brand),button,summary').forEach(control
  }
  control.replaceChildren(wrap);control.classList.add('roll-control');
 });
+
+// Direct step selection complements the existing scroll, touch and keyboard story.
+document.querySelectorAll('[data-state]').forEach(button=>button.addEventListener('click',()=>goTo(Number(button.dataset.state))));
+document.querySelectorAll('a[href="#funktion"]').forEach(link=>link.addEventListener('click',event=>{event.preventDefault();goTo(1)}));
+// Escape and outside interaction close mobile navigation without trapping focus.
+document.addEventListener('click',event=>{if(!event.target.closest('.header')&&nav.classList.contains('open')){nav.classList.remove('open');toggle.setAttribute('aria-expanded','false')}});
+nav.addEventListener('keydown',event=>{if(event.key==='Escape')toggle.focus()});

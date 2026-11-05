@@ -34,24 +34,25 @@ function paint(state){
  frameState=state;const t=Math.max(0,Math.min(1,state)),rect=slot.getBoundingClientRect(),vh=sceneHeight(),vw=document.documentElement.clientWidth;
  const heroY=rect.top+scrollY;const mobile=vw<=760;
  const operation=smooth(3,4,state),colorProgress=smooth(colorStart(),sceneEnd(),state);
- const end={left:mobile?vw*.025:vw*.12,top:mobile?interpolate(interpolate(vh*.09,vh*.2,operation),vh*.25,colorProgress):interpolate(interpolate(vh*.12,vh*.16,operation),vh*.23,colorProgress),width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
+ const workflowExit=photoReady&&state>6?Math.min(0,workflowTop()-scrollY):0;
+ const end={left:mobile?vw*.025:vw*.12,top:mobile?interpolate(vh*.09,vh*.2,operation):interpolate(vh*.12,vh*.16,operation),width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
  // Keep the WebGL viewport constant during scrolling. Only the compositor layer moves/scales.
  const visualHeight=interpolate(Math.max(80,rect.height-86)*1.09,end.height,t);
  const centerX=interpolate(rect.left+rect.width/2,end.left+end.width/2,t);
- const centerY=interpolate(heroY+Math.max(80,rect.height-86)/2,end.top+end.height/2,t);
+ const centerY=interpolate(heroY+Math.max(80,rect.height-86)/2,end.top+end.height/2,t)+workflowExit;
  const scale=visualHeight/end.height;
  layer.style.left='0px';layer.style.top='0px';
  layer.style.width=`${end.width}px`;layer.style.height=`${end.height}px`;
  layer.style.transform=`translate3d(${centerX-end.width/2}px,${centerY-end.height/2}px,0) scale(${scale})`;
- layer.style.opacity=(scrollY>colorsTop()+vh*.65)?'0':'1';
+ layer.style.opacity=(photoReady&&state>6&&workflow.getBoundingClientRect().bottom<=0)||scrollY>colorsTop()+vh*.65?'0':'1';
  const spin=Math.max(0,Math.min(2,state-1));
  angle=interpolate(interpolate(0,-8,t)-35*Math.sin(spin*Math.PI),0,operation);
  const pointerGain=smooth(.9,1,state)*(photoReady?1-smooth(5.8,6,state):1);
  const tilt=interpolate(interpolate(85,82,t)-16*Math.sin(spin*Math.PI*2),85,operation)+mouseY*2*pointerGain;
- const roll=interpolate(interpolate(40,-12,t)+180*spin,360,operation)+360*colorProgress;
+ const roll=interpolate(interpolate(40,-12,t)+180*spin,360,operation);
  heroModel.orientation=`${-roll}deg ${28*Math.sin(spin*Math.PI)*(1-operation)}deg 0deg`;
  heroModel.shadowIntensity=0;
- if(heroModel.loaded){const time=photoReady&&state>=6?3+colorProgress:Math.max(0,Math.min(4,state-3));if(Math.abs(heroModel.currentTime-time)>.00001)heroModel.currentTime=time;}
+ if(heroModel.loaded){const time=photoReady&&state>=6?3:Math.max(0,Math.min(4,state-3));if(Math.abs(heroModel.currentTime-time)>.00001)heroModel.currentTime=time;}
  // Neutral-model fit in meters preserves the previous size without auto-framing each pose.
  const radius=.179346594*interpolate(.75,1.05,t);heroModel.cameraOrbit=`${angle+mouseX*3*pointerGain}deg ${tilt}deg ${radius}m`;heroModel.style.transform=`translate(${mouseX*6*pointerGain}px,${mouseY*4*pointerGain}px) rotate(0deg)`;
  const titleRect=title.getBoundingClientRect(),target=brand.getBoundingClientRect();const size=parseFloat(getComputedStyle(title).fontSize),brandSize=parseFloat(getComputedStyle(brand).fontSize);
@@ -61,7 +62,7 @@ function paint(state){
  // Entry masks never animate during exit: fade the complete paragraph block.
  heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
  heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
- if(photoReady){const reveal=smooth(6,7,state);lifestylePhoto.style.clipPath=`inset(${(1-reveal)*100}% 0 0 0)`;lifestylePhoto.style.visibility=reveal>0&&scrollY<=colorsTop()?'visible':'hidden';lifestylePhoto.style.opacity=String(1-colorProgress)}
+ if(photoReady){const reveal=smooth(6,7,state);lifestylePhoto.style.transform=`scale(${interpolate(mobile?.55:.32,1,reveal)})`;lifestylePhoto.style.visibility=reveal>0&&scrollY<=colorsTop()?'visible':'hidden';lifestylePhoto.style.opacity=String(smooth(6,6.12,state)*(1-colorProgress))}
  updateCards(state);
  updateSteps(state);
  colorHeading.style.opacity=String(colorProgress);colorPicker.style.opacity=String(colorProgress);colorPicker.inert=colorProgress<.9;colorHeading.style.visibility=colorPicker.style.visibility=colorProgress>.001?'visible':'hidden';colorShadow.style.opacity=String(colorProgress);

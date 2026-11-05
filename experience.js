@@ -14,10 +14,11 @@ const heroPicker=document.querySelector('.hero-color-picker');
 const colorSection=document.querySelector('.color-stage'),colorHeading=document.querySelector('.color-heading'),colorPicker=document.querySelector('.color-picker'),colorShadow=document.querySelector('.color-shadow');
 function colorsTop(){return colorSection.getBoundingClientRect().top+scrollY}
 const lifestyle=document.querySelector('.lifestyle-stage'),lifestylePhoto=lifestyle.querySelector('.lifestyle-photo');
+const lifestyleCopy=lifestyle.querySelector('.lifestyle-copy');
 const photoReady=lifestyle.querySelector('img').hasAttribute('src');lifestyle.hidden=!photoReady;
 function lifestyleTop(){return lifestyle.getBoundingClientRect().top+scrollY}
-function colorStart(){return photoReady?8:6}
-function sceneEnd(){return colorStart()+1}
+function sceneEnd(){return photoReady?9:7}
+function controlledScrollEnd(){return photoReady?lifestyleTop()+2*sceneHeight():colorsTop()}
 const layer=document.createElement('div');layer.className='shared-product';layer.append(heroModel);document.body.append(layer);
 const morph=document.createElement('div');morph.className='brand-morph';morph.textContent='SafeClick';morph.setAttribute('aria-hidden','true');morph.hidden=true;document.body.append(morph);
 heroModel.removeAttribute('camera-controls');heroModel.setAttribute('disable-zoom','');heroModel.setAttribute('disable-pan','');heroModel.setAttribute('tabindex','-1');
@@ -33,7 +34,7 @@ function interpolate(a,b,t){return a+(b-a)*t}
 function paint(state){
  frameState=state;const t=Math.max(0,Math.min(1,state)),rect=slot.getBoundingClientRect(),vh=sceneHeight(),vw=document.documentElement.clientWidth;
  const heroY=rect.top+scrollY;const mobile=vw<=760;
- const operation=smooth(3,4,state),colorProgress=smooth(colorStart(),sceneEnd(),state);
+ const operation=smooth(3,4,state),colorProgress=photoReady?smooth(controlledScrollEnd(),colorsTop(),scrollY):smooth(6,7,state);
  const workflowExit=photoReady&&state>6?Math.min(0,workflowTop()-scrollY):0;
  const end={left:mobile?vw*.025:vw*.12,top:mobile?interpolate(vh*.09,vh*.2,operation):interpolate(vh*.12,vh*.16,operation),width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
  // Keep the WebGL viewport constant during scrolling. Only the compositor layer moves/scales.
@@ -62,7 +63,7 @@ function paint(state){
  // Entry masks never animate during exit: fade the complete paragraph block.
  heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
  heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
- if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`}
+ if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`;const shade=smooth(8,9,state),text=smooth(8.08,8.85,state);lifestylePhoto.style.setProperty('--photo-dim',String(shade*.28));lifestyleCopy.style.opacity=String(text);lifestyleCopy.setAttribute('aria-hidden',String(text<.5))}
  updateCards(state);
  updateSteps(state);
  colorHeading.style.opacity=String(colorProgress);colorPicker.style.opacity=String(colorProgress);colorPicker.inert=colorProgress<.9;colorHeading.style.visibility=colorPicker.style.visibility=colorProgress>.001?'visible':'hidden';colorShadow.style.opacity=String(colorProgress);
@@ -82,7 +83,7 @@ function updateSteps(state){
  workflow.dataset.step=String(selectedStep);
  document.querySelectorAll('[data-goto-step]').forEach(button=>{const active=Number(button.dataset.gotoStep)===selectedStep;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
 }
-function sceneScroll(state){const before=storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state);return before+(photoReady?(lifestyleTop()-workflowTop())*smooth(6,7,state)+sceneHeight()*smooth(7,8,state)+(colorsTop()-lifestyleTop()-sceneHeight())*smooth(8,9,state):(colorsTop()-workflowTop())*smooth(6,7,state))}
+function sceneScroll(state){const before=storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state);return before+(photoReady?(lifestyleTop()-workflowTop())*smooth(6,7,state)+sceneHeight()*(smooth(7,8,state)+smooth(8,9,state)):(colorsTop()-workflowTop())*smooth(6,7,state))}
 let menuTransition=null;
 function schedulePaint(){needsPaint=true;if(!raf)raf=requestAnimationFrame(tick)}
 function tick(now){
@@ -110,21 +111,22 @@ function goTo(value){menuTransition=null;targetState=Math.max(0,Math.min(sceneEn
 function navigateTo(value){goTo(value);menuTransition={from:frameState,start:performance.now()}}
 paint(0);
 function consume(delta){
- const end=colorsTop(),y=scrollY;
+ const end=controlledScrollEnd(),y=scrollY;
+ if(photoReady&&y>end+2)return false;
  if(y>end+innerHeight*.7)return false;
  if(y>end+25){if(delta<0){goTo(sceneEnd());return true}return false}
  if((targetState===0&&frameState===0&&delta<0)||(targetState===sceneEnd()&&frameState===sceneEnd()&&delta>0))return false;
  goTo(targetState+Math.max(-.14,Math.min(.14,delta/900)));return true;
 }
 window.addEventListener('wheel',e=>{if(e.ctrlKey||!e.deltaY||Math.abs(e.deltaX)>Math.abs(e.deltaY)||document.body.classList.contains('is-loading'))return;const units=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1;if(consume(e.deltaY*units))e.preventDefault()},{passive:false});
-window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction&&scrollY<=colorsTop()+25){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
+window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction&&scrollY<=controlledScrollEnd()+2&&!(direction>0&&frameState===sceneEnd()&&targetState===sceneEnd())){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
 window.addEventListener('touchstart',e=>{touchY=e.touches[0].clientY},{passive:true});window.addEventListener('touchmove',e=>{if(touchY===null)return;const next=e.touches[0].clientY,d=touchY-next;touchY=next;if(consume(d*2))e.preventDefault()},{passive:false});window.addEventListener('touchend',()=>{touchY=null},{passive:true});
-let sceneEndBeforeResize=colorsTop(),layoutWidth=innerWidth,layoutHeight=sceneHeight();
+let sceneEndBeforeResize=controlledScrollEnd(),layoutWidth=innerWidth,layoutHeight=sceneHeight();
 window.addEventListener('resize',()=>{
  const width=document.documentElement.clientWidth,height=sceneHeight();
  if(width===layoutWidth&&Math.abs(height-layoutHeight)<2)return;
  layoutWidth=width;layoutHeight=height;
- const inScene=scrollY<=sceneEndBeforeResize+32;sceneEndBeforeResize=colorsTop();
+ const inScene=scrollY<=sceneEndBeforeResize+32;sceneEndBeforeResize=controlledScrollEnd();
  if(inScene){const top=sceneScroll(frameState);lastSceneScroll=top;lastWrite=performance.now();window.scrollTo({top,behavior:'instant'})}
  schedulePaint();
 });new ResizeObserver(schedulePaint).observe(slot);
@@ -133,7 +135,7 @@ window.addEventListener('scroll',()=>{
  if(Math.abs(targetState-frameState)>.0001||performance.now()-lastWrite<120)return;
  const base=storyTop();
  if(scrollY<base*.25&&frameState>0)goTo(0);
- else if(Math.abs(scrollY-colorsTop())<4&&frameState<sceneEnd())goTo(sceneEnd());
+ else if(Math.abs(scrollY-controlledScrollEnd())<4&&frameState<sceneEnd())goTo(sceneEnd());
  else if(Math.abs(scrollY-workflowTop())<4&&frameState<4)goTo(4);
  else if(Math.abs(scrollY-base)<4&&frameState<1)goTo(1);
  else schedulePaint();

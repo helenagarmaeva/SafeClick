@@ -49,6 +49,7 @@ function paint(state){
  heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
  updateCards(state);
  updateSteps(state);
+ positionStepDescriptions();
  colorHeading.style.opacity=String(colorProgress);colorPicker.style.opacity=String(colorProgress);colorPicker.inert=colorProgress<.9;colorHeading.style.visibility=colorPicker.style.visibility=colorProgress>.001?'visible':'hidden';colorShadow.style.opacity=String(colorProgress);
  brand.style.pointerEvents=t===1?'auto':'none';
  if(scrollY>colorsTop()+vh*.7)morph.hidden=true;
@@ -62,7 +63,9 @@ function updateCards(state){
 function updateSteps(state){
  const weights=[smooth(3.25,4,state)*(1-smooth(4.15,5,state)),smooth(4.15,5,state)*(1-smooth(5.15,6,state)),smooth(5.15,6,state)];
  stepPanels.forEach((panel,i)=>{const opacity=weights[i]*(1-smooth(6,7,state));panel.style.opacity=String(opacity);[...panel.children].forEach(child=>{child.style.opacity=String(opacity)});panel.style.visibility=opacity>.001?'visible':'hidden';panel.inert=opacity<.5;panel.setAttribute('aria-hidden',String(opacity<.5))});
- workflow.dataset.step=String(Math.max(0,Math.min(2,Math.round(state-4))));
+ const selectedStep=Math.max(0,Math.min(2,Math.round(state-4)));
+ workflow.dataset.step=String(selectedStep);
+ document.querySelectorAll('[data-goto-step]').forEach(button=>{const active=Number(button.dataset.gotoStep)===selectedStep;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
 }
 function sceneScroll(state){return storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state)+(colorsTop()-workflowTop())*smooth(6,7,state)}
 function tick(now){
@@ -140,3 +143,22 @@ function prepareLockHighlight(){
   context.putImageData(pixels,0,0);lockHighlightTexture=await heroModel.createTexture(canvas.toDataURL('image/png'));applyFinish();
  })();return lockHighlightPromise;
 }
+
+// Place copy 24px below the projected product bounds, keeping small screens usable.
+function positionStepDescriptions(){
+ if(!heroModel.loaded)return;
+ const d=heroModel.getDimensions(),orbit=heroModel.getCameraOrbit();
+ const phi=orbit.phi,theta=orbit.theta,r=orbit.radius;
+ const camera=[Math.sin(phi)*Math.sin(theta),Math.cos(phi),Math.sin(phi)*Math.cos(theta)];
+ const up=[-Math.cos(phi)*Math.sin(theta),Math.sin(phi),-Math.cos(phi)*Math.cos(theta)];
+ const box=layer.getBoundingClientRect(),focal=box.height/(2*Math.tan(heroModel.getFieldOfView()*Math.PI/360));
+ let bottom=box.top+box.height/2;
+ for(const x of [-d.x/2,d.x/2])for(let sample=0;sample<64;sample++){
+  const a=sample*Math.PI/32,y=d.y/2*Math.cos(a),z=d.z/2*Math.sin(a);
+  const depth=r-(x*camera[0]+y*camera[1]+z*camera[2]);
+  if(depth>0)bottom=Math.max(bottom,box.top+box.height/2-(x*up[0]+y*up[1]+z*up[2])*focal/depth);
+ }
+ const section=workflow.getBoundingClientRect();
+ document.querySelectorAll('.workflow-copy').forEach(copy=>{const top=Math.min(bottom-section.top+24,section.height-copy.getBoundingClientRect().height-32);copy.style.top=`${Math.max(0,top)}px`});
+}
+document.querySelectorAll('[data-goto-step]').forEach(button=>button.addEventListener('click',()=>goTo(4+Number(button.dataset.gotoStep))));

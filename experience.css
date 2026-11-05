@@ -68,3 +68,5 @@ body{isolation:isolate}
 @media(max-width:760px){
  .workflow-copy,.workflow-panel[data-step="1"] .workflow-copy{left:6%;right:auto;width:88%;text-align:left;top:calc(52% + 80px)}
 }
+
+html,body{overflow-anchor:none;overscroll-behavior-y:none}

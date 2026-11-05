@@ -16,14 +16,17 @@ function colorsTop(){return colorSection.getBoundingClientRect().top+scrollY}
 const layer=document.createElement('div');layer.className='shared-product';layer.append(heroModel);document.body.append(layer);
 const morph=document.createElement('div');morph.className='brand-morph';morph.textContent='SafeClick';morph.setAttribute('aria-hidden','true');morph.hidden=true;document.body.append(morph);
 heroModel.removeAttribute('camera-controls');heroModel.setAttribute('disable-zoom','');heroModel.setAttribute('disable-pan','');heroModel.setAttribute('tabindex','-1');
+heroModel.interpolationDecay=0;
+heroModel.setAttribute('min-camera-orbit','auto auto 0.01m');heroModel.setAttribute('max-camera-orbit','auto auto 1m');
 heroModel.addEventListener('load',()=>{heroModel.animationName='Device workflow';heroModel.pause();heroModel.currentTime=0});
-let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0,mouseX=0,mouseY=0,mouseTargetX=0,mouseTargetY=0,mouseRaf=0,stepDescriptionLayoutKey='';
+let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0,mouseX=0,mouseY=0,mouseTargetX=0,mouseTargetY=0,stepDescriptionLayoutKey='',needsPaint=true,lastSceneScroll=null;
 const motionReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+function sceneHeight(){return document.querySelector('.screen').clientHeight}
 function storyTop(){return story.getBoundingClientRect().top+scrollY}
 function interpolate(a,b,t){return a+(b-a)*t}
 function paint(state){
- frameState=state;const t=Math.max(0,Math.min(1,state)),rect=slot.getBoundingClientRect(),vh=innerHeight,vw=innerWidth;
+ frameState=state;const t=Math.max(0,Math.min(1,state)),rect=slot.getBoundingClientRect(),vh=sceneHeight(),vw=document.documentElement.clientWidth;
  const heroY=rect.top+scrollY;const mobile=vw<=760;
  const operation=smooth(3,4,state),colorProgress=smooth(6,7,state);
  const end={left:mobile?vw*.025:vw*.12,top:mobile?interpolate(interpolate(vh*.09,vh*.2,operation),vh*.25,colorProgress):interpolate(interpolate(vh*.12,vh*.16,operation),vh*.23,colorProgress),width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
@@ -31,15 +34,16 @@ function paint(state){
  layer.style.left=`${interpolate(rect.left,end.left,t)}px`;layer.style.top=`${interpolate(heroY,end.top,t)}px`;
  layer.style.width=`${interpolate(rect.width,end.width,t)}px`;layer.style.height=`${interpolate(Math.max(80,rect.height-86),end.height,t)}px`;
  layer.style.opacity=(scrollY>colorsTop()+vh*.65)?'0':'1';
- const spin=Math.max(0,Math.min(2,state-1)),fraction=spin%1;
+ const spin=Math.max(0,Math.min(2,state-1));
  angle=interpolate(interpolate(0,-8,t)-35*Math.sin(spin*Math.PI),0,operation);
- const pointerGain=state>=1?1:0;
+ const pointerGain=smooth(.9,1,state);
  const tilt=interpolate(interpolate(85,82,t)-16*Math.sin(spin*Math.PI*2),85,operation)+mouseY*2*pointerGain;
  const roll=interpolate(interpolate(40,-12,t)+180*spin,360,operation)+360*colorProgress;
  heroModel.orientation=`${-roll}deg ${28*Math.sin(spin*Math.PI)*(1-operation)}deg 0deg`;
  heroModel.shadowIntensity=0;
- if(heroModel.loaded){heroModel.currentTime=Math.max(0,Math.min(4,state-3));}
- const radius=interpolate(75,mobile?145:130,t);heroModel.cameraOrbit=`${angle+mouseX*3*pointerGain}deg ${tilt}deg ${radius}%`;heroModel.style.transform=`translate(${mouseX*6*pointerGain}px,${mouseY*4*pointerGain}px) rotate(0deg)`;if(heroModel.jumpCameraToGoal)heroModel.jumpCameraToGoal();
+ if(heroModel.loaded){const time=Math.max(0,Math.min(4,state-3));if(Math.abs(heroModel.currentTime-time)>.00001)heroModel.currentTime=time;}
+ // Neutral-model fit in meters preserves the previous size without auto-framing each pose.
+ const radius=.179346594*interpolate(.75,1.05,t);heroModel.cameraOrbit=`${angle+mouseX*3*pointerGain}deg ${tilt}deg ${radius}m`;heroModel.style.transform=`translate(${mouseX*6*pointerGain}px,${mouseY*4*pointerGain}px) rotate(0deg)`;
  const titleRect=title.getBoundingClientRect(),target=brand.getBoundingClientRect();const size=parseFloat(getComputedStyle(title).fontSize),brandSize=parseFloat(getComputedStyle(brand).fontSize);
  morph.style.left=`${interpolate(titleRect.left,target.left,t)}px`;morph.style.top=`${interpolate(titleRect.top+scrollY,target.top,t)}px`;morph.style.fontSize=`${interpolate(size,brandSize,t)}px`;morph.style.letterSpacing=`${interpolate(-.065*size,-1.2,t)}px`;
  morph.hidden=state===0;title.style.opacity=state===0?'1':'0';heading.querySelector('.eyebrow').style.opacity=String(1-t);
@@ -68,41 +72,64 @@ function updateSteps(state){
  document.querySelectorAll('[data-goto-step]').forEach(button=>{const active=Number(button.dataset.gotoStep)===selectedStep;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
 }
 function sceneScroll(state){return storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state)+(colorsTop()-workflowTop())*smooth(6,7,state)}
+function schedulePaint(){needsPaint=true;if(!raf)raf=requestAnimationFrame(tick)}
 function tick(now){
  const dt=lastFrame?Math.min(40,now-lastFrame):16;lastFrame=now;
  const distance=targetState-frameState;
  const step=motionReduced?distance:Math.sign(distance)*Math.min(Math.abs(distance)*(1-Math.exp(-dt/160)),.022*dt/16);
  const state=Math.abs(distance)<.001?targetState:frameState+step;
- lastWrite=performance.now();window.scrollTo({top:sceneScroll(state),behavior:'instant'});paint(state);
- if(Math.abs(targetState-frameState)>.0001)raf=requestAnimationFrame(tick);else{raf=0;lastFrame=0}
+ const sceneChanged=state!==frameState;
+ const dx=mouseTargetX-mouseX,dy=mouseTargetY-mouseY;
+ const pointerChanged=Math.abs(dx)>.001||Math.abs(dy)>.001;
+ const follow=1-Math.exp(-dt/110);
+ mouseX=pointerChanged?mouseX+dx*follow:mouseTargetX;mouseY=pointerChanged?mouseY+dy*follow:mouseTargetY;
+ if(sceneChanged){const top=sceneScroll(state);lastSceneScroll=top;lastWrite=now;if(Math.abs(scrollY-top)>.5)window.scrollTo({top,behavior:'instant'})}
+ if(sceneChanged||pointerChanged||needsPaint){needsPaint=false;paint(state)}
+ if(Math.abs(targetState-frameState)>.0001||Math.abs(mouseTargetX-mouseX)>.001||Math.abs(mouseTargetY-mouseY)>.001||needsPaint)raf=requestAnimationFrame(tick);
+ else{raf=0;lastFrame=0}
 }
-function goTo(value){targetState=Math.max(0,Math.min(7,value));if(!raf)raf=requestAnimationFrame(tick)}
+function goTo(value){targetState=Math.max(0,Math.min(7,value));schedulePaint()}
 paint(0);
 function consume(delta){
  const end=colorsTop(),y=scrollY;
  if(y>end+innerHeight*.7)return false;
  if(y>end+25){if(delta<0){goTo(7);return true}return false}
- if((targetState<=0&&delta<0)||(targetState>=7&&frameState>=6.999&&delta>0))return false;
+ if((targetState===0&&frameState===0&&delta<0)||(targetState===7&&frameState===7&&delta>0))return false;
  goTo(targetState+Math.max(-.14,Math.min(.14,delta/900)));return true;
 }
 window.addEventListener('wheel',e=>{if(e.ctrlKey||!e.deltaY||Math.abs(e.deltaX)>Math.abs(e.deltaY)||document.body.classList.contains('is-loading'))return;const units=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1;if(consume(e.deltaY*units))e.preventDefault()},{passive:false});
 window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction&&scrollY<=colorsTop()+25){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
 window.addEventListener('touchstart',e=>{touchY=e.touches[0].clientY},{passive:true});window.addEventListener('touchmove',e=>{if(touchY===null)return;const next=e.touches[0].clientY,d=touchY-next;touchY=next;if(consume(d*2))e.preventDefault()},{passive:false});window.addEventListener('touchend',()=>{touchY=null},{passive:true});
-let sceneEndBeforeResize=colorsTop();
-window.addEventListener('resize',()=>{const inScene=scrollY<=sceneEndBeforeResize+32;sceneEndBeforeResize=colorsTop();if(inScene&&!raf){lastWrite=performance.now();window.scrollTo({top:sceneScroll(frameState),behavior:'instant'})}paint(frameState)});new ResizeObserver(()=>paint(frameState)).observe(slot);
-window.addEventListener('scroll',()=>{if(raf||performance.now()-lastWrite<120)return;const base=storyTop();if(scrollY<base*.25&&frameState>0){targetState=0;paint(0)}else if(Math.abs(scrollY-colorsTop())<4&&frameState<7){goTo(7)}else if(Math.abs(scrollY-workflowTop())<4&&frameState<4){goTo(4)}else if(Math.abs(scrollY-base)<4&&frameState<1){goTo(1)}else paint(frameState)},{passive:true});
+let sceneEndBeforeResize=colorsTop(),layoutWidth=innerWidth,layoutHeight=sceneHeight();
+window.addEventListener('resize',()=>{
+ const width=document.documentElement.clientWidth,height=sceneHeight();
+ if(width===layoutWidth&&Math.abs(height-layoutHeight)<2)return;
+ layoutWidth=width;layoutHeight=height;
+ const inScene=scrollY<=sceneEndBeforeResize+32;sceneEndBeforeResize=colorsTop();
+ if(inScene){const top=sceneScroll(frameState);lastSceneScroll=top;lastWrite=performance.now();window.scrollTo({top,behavior:'instant'})}
+ schedulePaint();
+});new ResizeObserver(schedulePaint).observe(slot);
+window.addEventListener('scroll',()=>{
+ if(lastSceneScroll!==null&&Math.abs(scrollY-lastSceneScroll)<2)return;
+ if(Math.abs(targetState-frameState)>.0001||performance.now()-lastWrite<120)return;
+ const base=storyTop();
+ if(scrollY<base*.25&&frameState>0)goTo(0);
+ else if(Math.abs(scrollY-colorsTop())<4&&frameState<7)goTo(7);
+ else if(Math.abs(scrollY-workflowTop())<4&&frameState<4)goTo(4);
+ else if(Math.abs(scrollY-base)<4&&frameState<1)goTo(1);
+ else schedulePaint();
+},{passive:true});
 brand.addEventListener('click',e=>{e.preventDefault();goTo(0)});
 heroModel.addEventListener('error',()=>{document.querySelector('.story-error').hidden=false});
 
 // A small, damped response to pointer motion; disabled for touch and reduced motion.
-function drift(){
- mouseX+=(mouseTargetX-mouseX)*.075;mouseY+=(mouseTargetY-mouseY)*.075;
- if(Math.abs(mouseTargetX-mouseX)<.001&&Math.abs(mouseTargetY-mouseY)<.001){mouseX=mouseTargetX;mouseY=mouseTargetY;mouseRaf=0;paint(frameState);return}
- paint(frameState);mouseRaf=requestAnimationFrame(drift);
-}
 if(!motionReduced&&matchMedia('(pointer:fine)').matches){
- window.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;if(frameState<1){mouseTargetX=mouseTargetY=0;if(mouseX||mouseY){if(!mouseRaf)mouseRaf=requestAnimationFrame(drift)}return}mouseTargetX=(e.clientX/innerWidth-.5)*2;mouseTargetY=(e.clientY/innerHeight-.5)*2;if(!mouseRaf)mouseRaf=requestAnimationFrame(drift)});
- document.documentElement.addEventListener('pointerleave',()=>{mouseTargetX=mouseTargetY=0;if(!mouseRaf)mouseRaf=requestAnimationFrame(drift)});
+ window.addEventListener('pointermove',e=>{if(e.pointerType==='touch')return;
+  mouseTargetX=frameState>=1?(e.clientX/innerWidth-.5)*2:0;
+  mouseTargetY=frameState>=1?(e.clientY/innerHeight-.5)*2:0;
+  schedulePaint();
+ });
+ document.documentElement.addEventListener('pointerleave',()=>{mouseTargetX=mouseTargetY=0;schedulePaint()});
 }
 // Duplicate visual lettering only; controls retain one accessible label.
 document.querySelectorAll('a:not(.header-brand),button,summary').forEach(control=>{

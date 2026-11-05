@@ -164,3 +164,19 @@ footer.site-footer.reveal-ready.is-visible{opacity:1;transform:none}
 @media(max-width:760px){.product-showcase{padding-top:96px}}
 @media(max-height:740px){.product-showcase{padding-top:88px;padding-bottom:24px}.product-showcase h2{margin-bottom:32px}.showcase-color-picker{margin-top:16px}.showcase-price{margin-top:24px}}
 @media(prefers-reduced-motion:reduce){.footer-email::after{transition:none}}
+
+/* Compact section rhythm and a product group centered in the viewport. */
+.product-showcase{margin-block:80px;display:flex;align-items:center;justify-content:center;padding-block:104px}
+.showcase-content{width:100%;max-width:1120px;height:min(640px,100%);min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;text-align:center;margin-inline:auto}
+.product-showcase h2{margin-bottom:40px}
+.showcase-color-picker{margin-top:16px}
+.showcase-color-picker .color-name{margin-top:12px}
+.showcase-price{margin-top:32px}
+.technical-specs{min-height:0;padding-bottom:0}
+.technical-specs h2{margin-bottom:24px}
+footer.site-footer{padding-top:80px}
+.footer-bottom{margin-top:48px}
+.footer-email::after{content:'↗';transform:translate(-5px,5px)}
+.footer-email:hover::after,.footer-email:focus-visible::after{transform:translate(0,0)}
+@media(max-width:760px){.product-showcase{margin-block:64px;padding-block:96px}.product-showcase h2{margin-bottom:32px}footer.site-footer{padding-top:64px}.footer-bottom{margin-top:40px}}
+@media(max-height:740px){.product-showcase{padding-block:88px}.product-showcase h2{margin-bottom:24px}.showcase-color-picker{margin-top:12px}.showcase-price{margin-top:24px}}

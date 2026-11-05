@@ -60,7 +60,7 @@ body{isolation:isolate}
 .step-dots button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
 /* Final hero sizes from the latest annotation. */
 .hero h1{font-size:80px}
-.heading .eyebrow{font-size:16px}
+.heading .eyebrow{font-size:16px;font-weight:500}
 @media(max-width:360px){.hero h1{font-size:clamp(56px,20vw,80px)}}
 /* Center the compact color group independently of surrounding content widths. */
 .hero-color-picker,.color-picker{left:50%;right:auto;width:max-content;max-width:100%;transform:translateX(-50%)}
@@ -75,9 +75,9 @@ html,body{overflow-anchor:none;overscroll-behavior-y:none}
 
 .nav{gap:0;font-size:16px}
 .nav>a:not(.cta){font-weight:500}
-.nav>a+a{margin-left:16px}
-.nav>.cta{padding:12px 16px;margin-left:32px}
-@media(max-width:760px){.nav.open{gap:16px}.nav>a+a,.nav>.cta{margin-left:0}}
+.nav>a+a{margin-left:24px}
+.nav>.cta{padding:12px 16px;margin-left:40px}
+@media(max-width:760px){.nav.open{gap:24px}.nav>a+a,.nav>.cta{margin-left:0}.nav>.cta{margin-top:16px}}
 
 /* Step copy stays anchored to the same page edges as the hero copy. */
 .workflow-copy,.workflow-panel[data-step="1"] .workflow-copy{top:auto;bottom:clamp(32px,8svh,80px);right:4.8%;left:auto}

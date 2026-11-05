@@ -213,6 +213,7 @@ footer.site-footer{padding-top:var(--section-gap)}
 }
 
 footer.site-footer{padding-top:40px}
+.photo-scroll-hint{font-size:16px;bottom:max(40px,env(safe-area-inset-bottom))}
 @media(max-width:760px){
  .menu-toggle{position:relative;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:0;border-radius:0;background:transparent;color:var(--ink);cursor:pointer}
  .menu-line{position:absolute;left:10px;top:21px;width:24px;height:2px;background:currentColor;transform-origin:center;transition:transform .4s cubic-bezier(.22,1,.36,1)}

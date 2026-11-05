@@ -13,6 +13,11 @@ function workflowTop(){return workflow.getBoundingClientRect().top+scrollY}
 const heroPicker=document.querySelector('.hero-color-picker');
 const colorSection=document.querySelector('.color-stage'),colorHeading=document.querySelector('.color-heading'),colorPicker=document.querySelector('.color-picker'),colorShadow=document.querySelector('.color-shadow');
 function colorsTop(){return colorSection.getBoundingClientRect().top+scrollY}
+const lifestyle=document.querySelector('.lifestyle-stage'),lifestylePhoto=lifestyle.querySelector('.lifestyle-photo');
+const photoReady=lifestyle.querySelector('img').hasAttribute('src');lifestyle.hidden=!photoReady;
+function lifestyleTop(){return lifestyle.getBoundingClientRect().top+scrollY}
+function colorStart(){return photoReady?7:6}
+function sceneEnd(){return colorStart()+1}
 const layer=document.createElement('div');layer.className='shared-product';layer.append(heroModel);document.body.append(layer);
 const morph=document.createElement('div');morph.className='brand-morph';morph.textContent='SafeClick';morph.setAttribute('aria-hidden','true');morph.hidden=true;document.body.append(morph);
 heroModel.removeAttribute('camera-controls');heroModel.setAttribute('disable-zoom','');heroModel.setAttribute('disable-pan','');heroModel.setAttribute('tabindex','-1');
@@ -28,7 +33,7 @@ function interpolate(a,b,t){return a+(b-a)*t}
 function paint(state){
  frameState=state;const t=Math.max(0,Math.min(1,state)),rect=slot.getBoundingClientRect(),vh=sceneHeight(),vw=document.documentElement.clientWidth;
  const heroY=rect.top+scrollY;const mobile=vw<=760;
- const operation=smooth(3,4,state),colorProgress=smooth(6,7,state);
+ const operation=smooth(3,4,state),colorProgress=smooth(colorStart(),sceneEnd(),state);
  const end={left:mobile?vw*.025:vw*.12,top:mobile?interpolate(interpolate(vh*.09,vh*.2,operation),vh*.25,colorProgress):interpolate(interpolate(vh*.12,vh*.16,operation),vh*.23,colorProgress),width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
  // Keep the WebGL viewport constant during scrolling. Only the compositor layer moves/scales.
  const visualHeight=interpolate(Math.max(80,rect.height-86)*1.09,end.height,t);
@@ -41,12 +46,12 @@ function paint(state){
  layer.style.opacity=(scrollY>colorsTop()+vh*.65)?'0':'1';
  const spin=Math.max(0,Math.min(2,state-1));
  angle=interpolate(interpolate(0,-8,t)-35*Math.sin(spin*Math.PI),0,operation);
- const pointerGain=smooth(.9,1,state);
+ const pointerGain=smooth(.9,1,state)*(photoReady?1-smooth(5.8,6,state):1);
  const tilt=interpolate(interpolate(85,82,t)-16*Math.sin(spin*Math.PI*2),85,operation)+mouseY*2*pointerGain;
  const roll=interpolate(interpolate(40,-12,t)+180*spin,360,operation)+360*colorProgress;
  heroModel.orientation=`${-roll}deg ${28*Math.sin(spin*Math.PI)*(1-operation)}deg 0deg`;
  heroModel.shadowIntensity=0;
- if(heroModel.loaded){const time=Math.max(0,Math.min(4,state-3));if(Math.abs(heroModel.currentTime-time)>.00001)heroModel.currentTime=time;}
+ if(heroModel.loaded){const time=photoReady&&state>=6?3+colorProgress:Math.max(0,Math.min(4,state-3));if(Math.abs(heroModel.currentTime-time)>.00001)heroModel.currentTime=time;}
  // Neutral-model fit in meters preserves the previous size without auto-framing each pose.
  const radius=.179346594*interpolate(.75,1.05,t);heroModel.cameraOrbit=`${angle+mouseX*3*pointerGain}deg ${tilt}deg ${radius}m`;heroModel.style.transform=`translate(${mouseX*6*pointerGain}px,${mouseY*4*pointerGain}px) rotate(0deg)`;
  const titleRect=title.getBoundingClientRect(),target=brand.getBoundingClientRect();const size=parseFloat(getComputedStyle(title).fontSize),brandSize=parseFloat(getComputedStyle(brand).fontSize);
@@ -56,6 +61,7 @@ function paint(state){
  // Entry masks never animate during exit: fade the complete paragraph block.
  heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
  heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
+ if(photoReady){const reveal=smooth(6,7,state);lifestylePhoto.style.clipPath=`inset(${(1-reveal)*100}% 0 0 0)`;lifestylePhoto.style.visibility=reveal>0&&scrollY<=colorsTop()?'visible':'hidden';lifestylePhoto.style.opacity=String(1-colorProgress)}
  updateCards(state);
  updateSteps(state);
  colorHeading.style.opacity=String(colorProgress);colorPicker.style.opacity=String(colorProgress);colorPicker.inert=colorProgress<.9;colorHeading.style.visibility=colorPicker.style.visibility=colorProgress>.001?'visible':'hidden';colorShadow.style.opacity=String(colorProgress);
@@ -75,7 +81,7 @@ function updateSteps(state){
  workflow.dataset.step=String(selectedStep);
  document.querySelectorAll('[data-goto-step]').forEach(button=>{const active=Number(button.dataset.gotoStep)===selectedStep;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
 }
-function sceneScroll(state){return storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state)+(colorsTop()-workflowTop())*smooth(6,7,state)}
+function sceneScroll(state){const before=storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state);return before+(photoReady?(lifestyleTop()-workflowTop())*smooth(6,7,state)+(colorsTop()-lifestyleTop())*smooth(7,8,state):(colorsTop()-workflowTop())*smooth(6,7,state))}
 let menuTransition=null;
 function schedulePaint(){needsPaint=true;if(!raf)raf=requestAnimationFrame(tick)}
 function tick(now){
@@ -99,14 +105,14 @@ function tick(now){
  if(menuTransition||Math.abs(targetState-frameState)>.0001||Math.abs(mouseTargetX-mouseX)>.001||Math.abs(mouseTargetY-mouseY)>.001||needsPaint)raf=requestAnimationFrame(tick);
  else{raf=0;lastFrame=0}
 }
-function goTo(value){menuTransition=null;targetState=Math.max(0,Math.min(7,value));schedulePaint()}
+function goTo(value){menuTransition=null;targetState=Math.max(0,Math.min(sceneEnd(),value));schedulePaint()}
 function navigateTo(value){goTo(value);menuTransition={from:frameState,start:performance.now()}}
 paint(0);
 function consume(delta){
  const end=colorsTop(),y=scrollY;
  if(y>end+innerHeight*.7)return false;
- if(y>end+25){if(delta<0){goTo(7);return true}return false}
- if((targetState===0&&frameState===0&&delta<0)||(targetState===7&&frameState===7&&delta>0))return false;
+ if(y>end+25){if(delta<0){goTo(sceneEnd());return true}return false}
+ if((targetState===0&&frameState===0&&delta<0)||(targetState===sceneEnd()&&frameState===sceneEnd()&&delta>0))return false;
  goTo(targetState+Math.max(-.14,Math.min(.14,delta/900)));return true;
 }
 window.addEventListener('wheel',e=>{if(e.ctrlKey||!e.deltaY||Math.abs(e.deltaX)>Math.abs(e.deltaY)||document.body.classList.contains('is-loading'))return;const units=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1;if(consume(e.deltaY*units))e.preventDefault()},{passive:false});
@@ -126,7 +132,7 @@ window.addEventListener('scroll',()=>{
  if(Math.abs(targetState-frameState)>.0001||performance.now()-lastWrite<120)return;
  const base=storyTop();
  if(scrollY<base*.25&&frameState>0)goTo(0);
- else if(Math.abs(scrollY-colorsTop())<4&&frameState<7)goTo(7);
+ else if(Math.abs(scrollY-colorsTop())<4&&frameState<sceneEnd())goTo(sceneEnd());
  else if(Math.abs(scrollY-workflowTop())<4&&frameState<4)goTo(4);
  else if(Math.abs(scrollY-base)<4&&frameState<1)goTo(1);
  else schedulePaint();

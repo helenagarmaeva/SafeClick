@@ -28,6 +28,12 @@ heroModel.setAttribute('min-camera-orbit','auto auto 0.01m');heroModel.setAttrib
 heroModel.addEventListener('load',()=>{heroModel.animationName='Device workflow';heroModel.pause();heroModel.currentTime=0});
 let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0,mouseX=0,mouseY=0,mouseTargetX=0,mouseTargetY=0,needsPaint=true,lastSceneScroll=null,heroEntrance=null;
 const motionReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+let savedView=null;
+try{const value=JSON.parse(sessionStorage.getItem('safeclick-view')||'null');if(value?.path===location.pathname&&Number.isFinite(value.y)&&Number.isFinite(value.state))savedView=value}catch{}
+let restoring=Boolean(savedView&&savedView.y>2);
+if('scrollRestoration' in history)history.scrollRestoration='manual';
+window.addEventListener('pagehide',()=>{if(restoring)return;try{sessionStorage.setItem('safeclick-view',JSON.stringify({path:location.pathname,y:scrollY,state:frameState}))}catch{}});
+
 
 function sceneHeight(){return document.querySelector('.screen').clientHeight}
 function storyTop(){return story.getBoundingClientRect().top+scrollY}
@@ -44,6 +50,7 @@ function paint(state){
  const centerX=interpolate(rect.left+rect.width/2,end.left+end.width/2,t);
  const centerY=interpolate(heroY+Math.max(80,rect.height-86)/2,end.top+end.height/2,t)+workflowExit;
  const scale=visualHeight/end.height;
+ layer.style.visibility=restoring?'hidden':'visible';
  layer.style.left='0px';layer.style.top='0px';
  layer.style.width=`${end.width}px`;layer.style.height=`${end.height}px`;
  layer.style.transform=`translate3d(${centerX-end.width/2}px,${centerY-end.height/2}px,0) scale(${scale})`;
@@ -155,6 +162,7 @@ window.addEventListener('resize',()=>{
  schedulePaint();
 });new ResizeObserver(schedulePaint).observe(slot);
 window.addEventListener('scroll',()=>{
+ if(restoring)return;
  if(specsJumpTarget!==null&&Math.abs(scrollY-specsJumpTarget)<2)specsJumpTarget=null;
  if(lastSceneScroll!==null&&Math.abs(scrollY-lastSceneScroll)<2)return;
  if(Math.abs(targetState-frameState)>.0001||performance.now()-lastWrite<120)return;
@@ -192,14 +200,33 @@ document.querySelectorAll('a:not(.header-brand),button,summary').forEach(control
 });
 
 const finishes={black:{name:'Schwarz',hex:'#3c3e40',metallic:.75,roughness:.58},rose:{name:'Rosé',hex:'#d3a198',metallic:.78,roughness:.52},silver:{name:'Silber',hex:null},blue:{name:'Stahlblau',hex:'#8fb8ce',metallic:.7,roughness:.55}};
-let selectedFinish='silver',originalFinishes=[],lockHighlightTexture=null,lockHighlightPromise=null;
-function applyFinish(){
+let selectedFinish='silver',originalFinishes=[],lockHighlightTexture=null,lockHighlightPromise=null,finishRaf=0;
+function finishColor(hex){return [...hex.slice(1).match(/../g).map(value=>{const c=parseInt(value,16)/255;return c<=.04045?c/12.92:((c+.055)/1.055)**2.4}),1]}
+function updateColorName(label,name,animate){
+ const previous=label.dataset.colorName||label.textContent.trim();label.dataset.colorName=name;
+ if(previous===name){if(!label.querySelector('.color-label-text')){const text=document.createElement('span');text.className='color-label-text';text.textContent=name;label.replaceChildren(text)}return}
+ const next=document.createElement('span');next.className='color-label-text';next.textContent=name;
+ if(!animate||motionReduced){label.replaceChildren(next);return}
+ const old=document.createElement('span');old.className='color-label-text';old.textContent=previous;old.setAttribute('aria-hidden','true');old.style.cssText='position:absolute;inset:0';label.replaceChildren(old,next);
+ old.animate([{opacity:1,transform:'translateY(0)'},{opacity:0,transform:'translateY(-18px)'}],{duration:260,easing:'ease-out',fill:'forwards'}).finished.then(()=>old.remove()).catch(()=>{});
+ next.animate([{opacity:0,transform:'translateY(18px)'},{opacity:1,transform:'translateY(0)'}],{duration:550,easing:'cubic-bezier(.16,1,.3,1)'});
+}
+function applyFinish(animate=false){
+ if(finishRaf)cancelAnimationFrame(finishRaf);finishRaf=0;
  const finish=finishes[selectedFinish];
- for(const {material,color,metallic,roughness} of originalFinishes){const pbr=material.pbrMetallicRoughness;pbr.setBaseColorFactor(finish.hex||color);pbr.setMetallicFactor(finish.hex?(material.name.includes('textile')?0:finish.metallic):metallic);pbr.setRoughnessFactor(finish.hex?(material.name.includes('textile')?.86:finish.roughness):roughness)}
- for(const viewer of [heroModel,showcaseModel]){const locks=viewer.model?.materials.find(material=>material.name==='Aluminum with printed lock symbols');
- if(locks){const highlight=(selectedFinish==='black'||selectedFinish==='blue')&&lockHighlightTexture;locks.emissiveTexture.setTexture(highlight||null);locks.setEmissiveFactor(highlight?[.32,.36,.40]:[0,0,0])}}
+ const materials=originalFinishes.map(({material,color,metallic,roughness})=>{const pbr=material.pbrMetallicRoughness;return{pbr,from:[...pbr.baseColorFactor],to:finish.hex?finishColor(finish.hex):color,fromMetal:pbr.metallicFactor,toMetal:finish.hex?(material.name.includes('textile')?0:finish.metallic):metallic,fromRough:pbr.roughnessFactor,toRough:finish.hex?(material.name.includes('textile')?.86:finish.roughness):roughness}});
+ const highlight=(selectedFinish==='black'||selectedFinish==='blue')&&lockHighlightTexture;
+ const locks=[heroModel,showcaseModel].map(viewer=>viewer.model?.materials.find(material=>material.name==='Aluminum with printed lock symbols')).filter(Boolean).map(material=>({material,from:[...material.emissiveFactor],to:highlight?[.32,.36,.40]:[0,0,0]}));
+ if(highlight)locks.forEach(({material})=>material.emissiveTexture.setTexture(highlight));
  document.querySelectorAll('.color-swatch').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.color===selectedFinish)));
- document.querySelectorAll('.color-name').forEach(label=>{label.textContent=finish.name});
+ document.querySelectorAll('.color-name').forEach(label=>updateColorName(label,finish.name,animate));
+ const start=performance.now();
+ function render(now){const progress=animate&&!motionReduced?Math.min(1,(now-start)/650):1,ease=progress*progress*(3-2*progress);
+  materials.forEach(m=>{m.pbr.setBaseColorFactor(m.from.map((v,i)=>interpolate(v,m.to[i],ease)));m.pbr.setMetallicFactor(interpolate(m.fromMetal,m.toMetal,ease));m.pbr.setRoughnessFactor(interpolate(m.fromRough,m.toRough,ease))});
+  locks.forEach(({material,from,to})=>{material.setEmissiveFactor(from.map((v,i)=>interpolate(v,to[i],ease)));if(progress===1&&!highlight)material.emissiveTexture.setTexture(null)});
+  finishRaf=progress<1?requestAnimationFrame(render):0;
+ }
+ render(start);
 }
 function rememberFinishes(viewer){
  const materials=viewer.model.materials.filter(material=>material.name!=='Recessed dark hardware');
@@ -209,7 +236,7 @@ function rememberFinishes(viewer){
 }
 for(const viewer of [heroModel,showcaseModel]){viewer.addEventListener('load',()=>rememberFinishes(viewer),{once:true});if(viewer.loaded)rememberFinishes(viewer)}
 showcaseModel.addEventListener('load',()=>{showcaseModel.animationName='Device workflow';showcaseModel.pause();showcaseModel.currentTime=0});
-document.querySelectorAll('.color-swatch').forEach(button=>button.addEventListener('click',()=>{selectedFinish=button.dataset.color;applyFinish()}));
+document.querySelectorAll('.color-swatch').forEach(button=>button.addEventListener('click',()=>{if(selectedFinish===button.dataset.color)return;selectedFinish=button.dataset.color;applyFinish(true)}));
 
 // Only the printed glyph pixels receive a light gray contribution on dark finishes.
 function prepareLockHighlight(){
@@ -229,12 +256,23 @@ document.querySelectorAll('[data-goto-step]').forEach(button=>button.addEventLis
 const cookieDialog=document.querySelector('#cookie-settings');
 document.querySelector('.footer-cookie-button').addEventListener('click',()=>cookieDialog.showModal());
 
+// Restore a refreshed page after layout and fonts settle, before revealing the shared model.
+document.addEventListener('site-ready',()=>{if(!restoring)return;document.fonts.ready.then(()=>requestAnimationFrame(()=>requestAnimationFrame(()=>{
+ let state=Math.max(0,Math.min(sceneEnd(),savedView.state)),top=savedView.y;
+ if(photoReady&&(top>=lifestyleTop()-2||state>=7)){state=9;top=Math.max(top,controlledScrollEnd())}
+ else top=sceneScroll(state);
+ restoring=false;targetState=frameState=state;window.scrollTo({top,behavior:'instant'});lastSceneScroll=scrollY;lastWrite=performance.now();paint(state);schedulePaint();
+})))},{once:true});
+
 // Reveal complete sections without resizing either WebGL canvas.
 if(!motionReduced){
  const footer=document.querySelector('.site-footer');
  showcaseSection.classList.add('reveal-ready');footer.classList.add('reveal-ready');
  [showcaseModel,showcaseSection.querySelector('.color-options'),showcaseSection.querySelector('.color-name'),showcaseSection.querySelector('.showcase-price')].forEach((el,index)=>el.style.setProperty('--entrance-delay',`${index*100}ms`));
- const entranceObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-visible');entranceObserver.unobserve(entry.target)}}),{threshold:.2});
+ const entranceObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-visible');
+  if(entry.target===showcaseSection){showcaseSection.querySelectorAll('.color-swatch').forEach((el,i)=>el.animate([{opacity:0,transform:'translateY(10px) scale(.75)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:700,delay:180+i*70,easing:'cubic-bezier(.16,1,.3,1)',fill:'backwards'}))}
+  else{footer.querySelectorAll('.footer-company,.footer-address-line,.footer-email,.footer-copyright,.footer-links a,.footer-links button').forEach((el,i)=>el.animate([{opacity:0,transform:'translateY(18px)'},{opacity:1,transform:'translateY(0)'}],{duration:850,delay:Math.min(i*70,420),easing:'cubic-bezier(.16,1,.3,1)',fill:'backwards'}))}
+  entranceObserver.unobserve(entry.target)}}),{threshold:.2});
  entranceObserver.observe(showcaseSection);entranceObserver.observe(footer);
- document.addEventListener('site-ready',()=>{heroEntrance=heroModel.animate([{opacity:0,transform:'translateY(16px) scale(.96)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:950,delay:180,easing:'cubic-bezier(.16,1,.3,1)',fill:'backwards'})},{once:true});
+ document.addEventListener('site-ready',()=>{if(restoring||frameState>0)return;heroPicker.querySelectorAll('.color-swatch').forEach((el,i)=>el.animate([{opacity:0,transform:'translateY(10px) scale(.75)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:700,delay:450+i*70,easing:'cubic-bezier(.16,1,.3,1)',fill:'backwards'}));heroEntrance=heroModel.animate([{opacity:0,transform:'translateY(16px) scale(.96)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:950,delay:180,easing:'cubic-bezier(.16,1,.3,1)',fill:'backwards'})},{once:true});
 }

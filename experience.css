@@ -191,3 +191,13 @@ footer.site-footer{padding-top:80px}
 .product-showcase{margin-block:var(--section-gap)}
 footer.site-footer{padding-top:var(--section-gap)}
 .showcase-price{margin-top:32px}
+
+.photo-scroll-hint{justify-content:center;gap:8px;font-weight:500}
+.photo-scroll-arrow{font-size:18px}
+.product-showcase{padding-block:96px}
+.showcase-content{height:100%;max-width:none}
+.color-name{overflow:hidden;position:relative}
+.color-label-text{display:block}
+.footer-address-line{display:block}
+@media(max-width:760px){.product-showcase{padding-block:88px}}
+@media(max-height:740px){.product-showcase{padding-block:80px}}

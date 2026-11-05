@@ -187,7 +187,7 @@ if(!motionReduced&&matchMedia('(pointer:fine)').matches){
  document.documentElement.addEventListener('pointerleave',()=>{mouseTargetX=mouseTargetY=0;schedulePaint()});
 }
 // Duplicate visual lettering only; controls retain one accessible label.
-document.querySelectorAll('a:not(.header-brand),button,summary').forEach(control=>{
+document.querySelectorAll('a:not(.header-brand),button:not(.menu-toggle),summary').forEach(control=>{
  const label=control.textContent.trim();if(!label)return;
  if(!control.hasAttribute('aria-label'))control.setAttribute('aria-label',label);
  const wrap=document.createElement('span');wrap.className='roll-label';wrap.setAttribute('aria-hidden','true');

@@ -72,3 +72,9 @@ body{isolation:isolate}
 html,body{overflow-anchor:none;overscroll-behavior-y:none}
 
 .shared-product{transform-origin:50% 50%;will-change:transform;backface-visibility:hidden}
+
+.nav{gap:0;font-size:14px}
+.nav>a:not(.cta){font-weight:600}
+.nav>a+a{margin-left:16px}
+.nav>.cta{padding:12px 16px;margin-left:32px}
+@media(max-width:760px){.nav.open{gap:16px}.nav>a+a,.nav>.cta{margin-left:0}}

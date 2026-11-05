@@ -146,3 +146,21 @@ footer.site-footer{display:block;padding:80px var(--page-gutter) 40px;border:0;c
 .showcase-price{margin-top:calc(100px - 24px - 24px);padding:12px 16px;font-size:16px;font-weight:500}
 .product-showcase+.technical-specs{padding-top:0}
 @media(max-width:760px){.product-showcase h2{font-size:32px}}
+
+/* The interactive product card fits one viewport, including the fixed header. */
+.product-showcase{height:100svh;min-height:0;display:grid;grid-template-rows:auto minmax(0,1fr) auto auto;padding-top:104px;padding-bottom:32px}
+.product-showcase h2{margin-bottom:80px}
+#showcase-model{height:100%;min-height:0;margin:0 auto}
+.showcase-price{justify-self:center;align-self:start}
+.showcase-color-picker .color-name{font-weight:500}
+footer.site-footer{font-size:16px}
+.footer-email{display:inline-flex;align-items:center}
+.footer-email::after{content:'→';display:inline-block;margin-left:8px;opacity:0;transform:translateX(-6px);transition:opacity .25s,transform .25s}
+.footer-email:hover::after,.footer-email:focus-visible::after{opacity:1;transform:translateX(0)}
+.product-showcase.reveal-ready #showcase-model,.product-showcase.reveal-ready .color-options,.product-showcase.reveal-ready .color-name,.product-showcase.reveal-ready .showcase-price{opacity:0;transform:translateY(20px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1);transition-delay:var(--entrance-delay,0ms)}
+.product-showcase.reveal-ready.is-visible #showcase-model,.product-showcase.reveal-ready.is-visible .color-options,.product-showcase.reveal-ready.is-visible .color-name,.product-showcase.reveal-ready.is-visible .showcase-price{opacity:1;transform:translateY(0)}
+footer.site-footer.reveal-ready{opacity:0;transform:translateY(20px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1)}
+footer.site-footer.reveal-ready.is-visible{opacity:1;transform:none}
+@media(max-width:760px){.product-showcase{padding-top:96px}}
+@media(max-height:740px){.product-showcase{padding-top:88px;padding-bottom:24px}.product-showcase h2{margin-bottom:32px}.showcase-color-picker{margin-top:16px}.showcase-price{margin-top:24px}}
+@media(prefers-reduced-motion:reduce){.footer-email::after{transition:none}}

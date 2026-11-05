@@ -13,7 +13,7 @@ function workflowTop(){return workflow.getBoundingClientRect().top+scrollY}
 const heroPicker=document.querySelector('.hero-color-picker');
 const specsSection=document.querySelector('.technical-specs'),showcaseSection=document.querySelector('.product-showcase'),showcaseModel=document.querySelector('#showcase-model');
 function specsTop(){return specsSection.getBoundingClientRect().top+scrollY}
-function showcaseScrollTop(){return showcaseSection.getBoundingClientRect().top+scrollY-document.querySelector('.header').getBoundingClientRect().height-24}
+function showcaseScrollTop(){return showcaseSection.getBoundingClientRect().top+scrollY}
 const lifestyle=document.querySelector('.lifestyle-stage'),lifestylePhoto=lifestyle.querySelector('.lifestyle-photo');
 const lifestyleCopy=lifestyle.querySelector('.lifestyle-copy');
 const photoReady=lifestyle.querySelector('img').hasAttribute('src');lifestyle.hidden=!photoReady;
@@ -26,13 +26,14 @@ heroModel.removeAttribute('camera-controls');heroModel.setAttribute('disable-zoo
 heroModel.interpolationDecay=0;
 heroModel.setAttribute('min-camera-orbit','auto auto 0.01m');heroModel.setAttribute('max-camera-orbit','auto auto 1m');
 heroModel.addEventListener('load',()=>{heroModel.animationName='Device workflow';heroModel.pause();heroModel.currentTime=0});
-let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0,mouseX=0,mouseY=0,mouseTargetX=0,mouseTargetY=0,needsPaint=true,lastSceneScroll=null;
+let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0,mouseX=0,mouseY=0,mouseTargetX=0,mouseTargetY=0,needsPaint=true,lastSceneScroll=null,heroEntrance=null;
 const motionReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function sceneHeight(){return document.querySelector('.screen').clientHeight}
 function storyTop(){return story.getBoundingClientRect().top+scrollY}
 function interpolate(a,b,t){return a+(b-a)*t}
 function paint(state){
+ if(state>0&&heroEntrance){heroEntrance.cancel();heroEntrance=null}
  frameState=state;const t=Math.max(0,Math.min(1,state)),rect=slot.getBoundingClientRect(),vh=sceneHeight(),vw=document.documentElement.clientWidth;
  const heroY=rect.top+scrollY;const mobile=vw<=760;
  const operation=smooth(3,4,state);
@@ -228,3 +229,13 @@ document.querySelectorAll('[data-goto-step]').forEach(button=>button.addEventLis
 
 const cookieDialog=document.querySelector('#cookie-settings');
 document.querySelector('.footer-cookie-button').addEventListener('click',()=>cookieDialog.showModal());
+
+// Reveal complete sections without resizing either WebGL canvas.
+if(!motionReduced){
+ const footer=document.querySelector('.site-footer');
+ showcaseSection.classList.add('reveal-ready');footer.classList.add('reveal-ready');
+ [showcaseModel,showcaseSection.querySelector('.color-options'),showcaseSection.querySelector('.color-name'),showcaseSection.querySelector('.showcase-price')].forEach((el,index)=>el.style.setProperty('--entrance-delay',`${index*100}ms`));
+ const entranceObserver=new IntersectionObserver(entries=>entries.forEach(entry=>{if(entry.isIntersecting){entry.target.classList.add('is-visible');entranceObserver.unobserve(entry.target)}}),{threshold:.2});
+ entranceObserver.observe(showcaseSection);entranceObserver.observe(footer);
+ document.addEventListener('site-ready',()=>{heroEntrance=heroModel.animate([{opacity:0,transform:'translateY(16px) scale(.96)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:950,delay:180,easing:'cubic-bezier(.16,1,.3,1)',fill:'backwards'})},{once:true});
+}

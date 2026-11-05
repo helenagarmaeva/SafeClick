@@ -144,7 +144,7 @@ function prepareLockHighlight(){
  })();return lockHighlightPromise;
 }
 
-// Anchor all step descriptions 40px below the product; only opacity changes during scrolling.
+// Anchor step descriptions below the product: 80px on mobile, 40px on desktop.
 function positionStepDescriptions(){
  if(!heroModel.loaded||frameState<3.999||frameState>6)return;
  const layoutKey=`${innerWidth}x${innerHeight}`;
@@ -163,7 +163,8 @@ function positionStepDescriptions(){
  const section=workflow.getBoundingClientRect();
  const copies=[...document.querySelectorAll('.workflow-copy')];
  const maxHeight=Math.max(...copies.map(copy=>copy.getBoundingClientRect().height));
- const top=Math.max(0,Math.min(bottom-section.top+40,section.height-maxHeight-32));
+ const descriptionGap=innerWidth<=760?80:40;
+ const top=Math.max(0,Math.min(bottom-section.top+descriptionGap,section.height-maxHeight-32));
  copies.forEach(copy=>{copy.style.top=`${top}px`});
  stepDescriptionLayoutKey=layoutKey;
 }

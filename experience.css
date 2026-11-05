@@ -65,3 +65,6 @@ body{isolation:isolate}
 /* Center the compact color group independently of surrounding content widths. */
 .hero-color-picker,.color-picker{left:50%;right:auto;width:max-content;max-width:100%;transform:translateX(-50%)}
 .color-options{width:max-content;max-width:100%;margin-inline:auto}
+@media(max-width:760px){
+ .workflow-copy,.workflow-panel[data-step="1"] .workflow-copy{left:6%;right:auto;width:88%;text-align:left;top:calc(52% + 80px)}
+}

@@ -11,14 +11,14 @@ const story=document.querySelector('.story'),cards=[...document.querySelectorAll
 const workflow=document.querySelector('.workflow'),stepPanels=[...document.querySelectorAll('.workflow-panel')];
 function workflowTop(){return workflow.getBoundingClientRect().top+scrollY}
 const heroPicker=document.querySelector('.hero-color-picker');
-const colorSection=document.querySelector('.color-stage'),colorHeading=document.querySelector('.color-heading'),colorPicker=document.querySelector('.color-picker'),colorShadow=document.querySelector('.color-shadow');
-function colorsTop(){return colorSection.getBoundingClientRect().top+scrollY}
+const specsSection=document.querySelector('.technical-specs');
+function specsTop(){return specsSection.getBoundingClientRect().top+scrollY}
 const lifestyle=document.querySelector('.lifestyle-stage'),lifestylePhoto=lifestyle.querySelector('.lifestyle-photo');
 const lifestyleCopy=lifestyle.querySelector('.lifestyle-copy');
 const photoReady=lifestyle.querySelector('img').hasAttribute('src');lifestyle.hidden=!photoReady;
 function lifestyleTop(){return lifestyle.getBoundingClientRect().top+scrollY}
 function sceneEnd(){return photoReady?9:7}
-function controlledScrollEnd(){return photoReady?lifestyleTop()+2*sceneHeight():colorsTop()}
+function controlledScrollEnd(){return photoReady?lifestyleTop()+2*sceneHeight():specsTop()}
 const layer=document.createElement('div');layer.className='shared-product';layer.append(heroModel);document.body.append(layer);
 const morph=document.createElement('div');morph.className='brand-morph';morph.textContent='SafeClick';morph.setAttribute('aria-hidden','true');morph.hidden=true;document.body.append(morph);
 heroModel.removeAttribute('camera-controls');heroModel.setAttribute('disable-zoom','');heroModel.setAttribute('disable-pan','');heroModel.setAttribute('tabindex','-1');
@@ -34,7 +34,7 @@ function interpolate(a,b,t){return a+(b-a)*t}
 function paint(state){
  frameState=state;const t=Math.max(0,Math.min(1,state)),rect=slot.getBoundingClientRect(),vh=sceneHeight(),vw=document.documentElement.clientWidth;
  const heroY=rect.top+scrollY;const mobile=vw<=760;
- const operation=smooth(3,4,state),colorProgress=photoReady?smooth(controlledScrollEnd(),colorsTop(),scrollY):smooth(6,7,state);
+ const operation=smooth(3,4,state);
  const workflowExit=photoReady&&state>6?Math.min(0,workflowTop()-scrollY):0;
  const end={left:mobile?vw*.025:vw*.12,top:mobile?interpolate(vh*.09,vh*.2,operation):interpolate(vh*.12,vh*.16,operation),width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
  // Keep the WebGL viewport constant during scrolling. Only the compositor layer moves/scales.
@@ -45,7 +45,7 @@ function paint(state){
  layer.style.left='0px';layer.style.top='0px';
  layer.style.width=`${end.width}px`;layer.style.height=`${end.height}px`;
  layer.style.transform=`translate3d(${centerX-end.width/2}px,${centerY-end.height/2}px,0) scale(${scale})`;
- layer.style.opacity=(photoReady&&state>6&&workflow.getBoundingClientRect().bottom<=0)||scrollY>colorsTop()+vh*.65?'0':'1';
+ layer.style.opacity=(photoReady&&state>6&&workflow.getBoundingClientRect().bottom<=0)||scrollY>specsTop()+vh*.65?'0':'1';
  const spin=Math.max(0,Math.min(2,state-1));
  angle=interpolate(interpolate(0,-8,t)-35*Math.sin(spin*Math.PI),0,operation);
  const pointerGain=smooth(.9,1,state)*(photoReady?1-smooth(5.8,6,state):1);
@@ -66,9 +66,8 @@ function paint(state){
  if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`;const shade=smooth(8,9,state),text=smooth(8.08,8.85,state);lifestylePhoto.style.setProperty('--photo-dim',String(shade*.28));lifestyleCopy.style.opacity=String(text);lifestyleCopy.setAttribute('aria-hidden',String(text<.5))}
  updateCards(state);
  updateSteps(state);
- colorHeading.style.opacity=String(colorProgress);colorPicker.style.opacity=String(colorProgress);colorPicker.inert=colorProgress<.9;colorHeading.style.visibility=colorPicker.style.visibility=colorProgress>.001?'visible':'hidden';colorShadow.style.opacity=String(colorProgress);
  brand.style.pointerEvents=t===1?'auto':'none';
- if(scrollY>colorsTop()+vh*.7)morph.hidden=true;
+ if(scrollY>specsTop()+vh*.7)morph.hidden=true;
 }
 function smooth(a,b,value){const x=Math.max(0,Math.min(1,(value-a)/(b-a)));return x*x*(3-2*x)}
 function updateCards(state){
@@ -83,7 +82,7 @@ function updateSteps(state){
  workflow.dataset.step=String(selectedStep);
  document.querySelectorAll('[data-goto-step]').forEach(button=>{const active=Number(button.dataset.gotoStep)===selectedStep;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
 }
-function sceneScroll(state){const before=storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state);return before+(photoReady?(lifestyleTop()-workflowTop())*smooth(6,7,state)+sceneHeight()*(smooth(7,8,state)+smooth(8,9,state)):(colorsTop()-workflowTop())*smooth(6,7,state))}
+function sceneScroll(state){const before=storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state);return before+(photoReady?(lifestyleTop()-workflowTop())*smooth(6,7,state)+sceneHeight()*(smooth(7,8,state)+smooth(8,9,state)):(specsTop()-workflowTop())*smooth(6,7,state))}
 let menuTransition=null;
 function schedulePaint(){needsPaint=true;if(!raf)raf=requestAnimationFrame(tick)}
 function tick(now){

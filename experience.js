@@ -144,7 +144,7 @@ function prepareLockHighlight(){
  })();return lockHighlightPromise;
 }
 
-// Place copy 24px below the projected product bounds, keeping small screens usable.
+// Place copy 32px below the projected product bounds, keeping small screens usable.
 function positionStepDescriptions(){
  if(!heroModel.loaded)return;
  const d=heroModel.getDimensions(),orbit=heroModel.getCameraOrbit();
@@ -159,6 +159,6 @@ function positionStepDescriptions(){
   if(depth>0)bottom=Math.max(bottom,box.top+box.height/2-(x*up[0]+y*up[1]+z*up[2])*focal/depth);
  }
  const section=workflow.getBoundingClientRect();
- document.querySelectorAll('.workflow-copy').forEach(copy=>{const top=Math.min(bottom-section.top+24,section.height-copy.getBoundingClientRect().height-32);copy.style.top=`${Math.max(0,top)}px`});
+ document.querySelectorAll('.workflow-copy').forEach(copy=>{const top=Math.min(bottom-section.top+32,section.height-copy.getBoundingClientRect().height-32);copy.style.top=`${Math.max(0,top)}px`});
 }
 document.querySelectorAll('[data-goto-step]').forEach(button=>button.addEventListener('click',()=>goTo(4+Number(button.dataset.gotoStep))));

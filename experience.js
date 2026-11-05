@@ -19,7 +19,7 @@ heroModel.removeAttribute('camera-controls');heroModel.setAttribute('disable-zoo
 heroModel.interpolationDecay=0;
 heroModel.setAttribute('min-camera-orbit','auto auto 0.01m');heroModel.setAttribute('max-camera-orbit','auto auto 1m');
 heroModel.addEventListener('load',()=>{heroModel.animationName='Device workflow';heroModel.pause();heroModel.currentTime=0});
-let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0,mouseX=0,mouseY=0,mouseTargetX=0,mouseTargetY=0,stepDescriptionLayoutKey='',needsPaint=true,lastSceneScroll=null;
+let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0,mouseX=0,mouseY=0,mouseTargetX=0,mouseTargetY=0,needsPaint=true,lastSceneScroll=null;
 const motionReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function sceneHeight(){return document.querySelector('.screen').clientHeight}
@@ -48,7 +48,7 @@ function paint(state){
  heroModel.shadowIntensity=0;
  if(heroModel.loaded){const time=Math.max(0,Math.min(4,state-3));if(Math.abs(heroModel.currentTime-time)>.00001)heroModel.currentTime=time;}
  // Neutral-model fit in meters preserves the previous size without auto-framing each pose.
- const radius=.179346594*interpolate(.75,1.05,t);heroModel.cameraOrbit=`${angle+mouseX*3*pointerGain}deg ${tilt}deg ${radius}m`;heroModel.style.transform=`translate(${mouseX*6*pointerGain}px,${mouseY*4*pointerGain}px) rotate(0deg)`;
+ const radius=.179346594*interpolate(.69,1.05,t);heroModel.cameraOrbit=`${angle+mouseX*3*pointerGain}deg ${tilt}deg ${radius}m`;heroModel.style.transform=`translate(${mouseX*6*pointerGain}px,${mouseY*4*pointerGain}px) rotate(0deg)`;
  const titleRect=title.getBoundingClientRect(),target=brand.getBoundingClientRect();const size=parseFloat(getComputedStyle(title).fontSize),brandSize=parseFloat(getComputedStyle(brand).fontSize);
  morph.style.left=`${interpolate(titleRect.left,target.left,t)}px`;morph.style.top=`${interpolate(titleRect.top+scrollY,target.top,t)}px`;morph.style.fontSize=`${interpolate(size,brandSize,t)}px`;morph.style.letterSpacing=`${interpolate(-.065*size,-1.2,t)}px`;
  morph.hidden=state===0;title.style.opacity=state===0?'1':'0';heading.querySelector('.eyebrow').style.opacity=String(1-t);
@@ -58,7 +58,6 @@ function paint(state){
  heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
  updateCards(state);
  updateSteps(state);
- positionStepDescriptions();
  colorHeading.style.opacity=String(colorProgress);colorPicker.style.opacity=String(colorProgress);colorPicker.inert=colorProgress<.9;colorHeading.style.visibility=colorPicker.style.visibility=colorProgress>.001?'visible':'hidden';colorShadow.style.opacity=String(colorProgress);
  brand.style.pointerEvents=t===1?'auto':'none';
  if(scrollY>colorsTop()+vh*.7)morph.hidden=true;
@@ -77,12 +76,19 @@ function updateSteps(state){
  document.querySelectorAll('[data-goto-step]').forEach(button=>{const active=Number(button.dataset.gotoStep)===selectedStep;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
 }
 function sceneScroll(state){return storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state)+(colorsTop()-workflowTop())*smooth(6,7,state)}
+let menuTransition=null;
 function schedulePaint(){needsPaint=true;if(!raf)raf=requestAnimationFrame(tick)}
 function tick(now){
  const dt=lastFrame?Math.min(40,now-lastFrame):16;lastFrame=now;
  const distance=targetState-frameState;
  const step=motionReduced?distance:Math.sign(distance)*Math.min(Math.abs(distance)*(1-Math.exp(-dt/160)),.022*dt/16);
- const state=Math.abs(distance)<.001?targetState:frameState+step;
+ let state=Math.abs(distance)<.001?targetState:frameState+step;
+ if(menuTransition){
+  const progress=motionReduced?1:Math.max(0,Math.min(1,(now-menuTransition.start)/650));
+  const ease=progress*progress*(3-2*progress);
+  state=interpolate(menuTransition.from,targetState,ease);
+  if(progress===1){state=targetState;menuTransition=null}
+ }
  const sceneChanged=state!==frameState;
  const dx=mouseTargetX-mouseX,dy=mouseTargetY-mouseY;
  const pointerChanged=Math.abs(dx)>.001||Math.abs(dy)>.001;
@@ -90,10 +96,11 @@ function tick(now){
  mouseX=pointerChanged?mouseX+dx*follow:mouseTargetX;mouseY=pointerChanged?mouseY+dy*follow:mouseTargetY;
  if(sceneChanged){const top=sceneScroll(state);lastSceneScroll=top;lastWrite=now;if(Math.abs(scrollY-top)>.5)window.scrollTo({top,behavior:'instant'})}
  if(sceneChanged||pointerChanged||needsPaint){needsPaint=false;paint(state)}
- if(Math.abs(targetState-frameState)>.0001||Math.abs(mouseTargetX-mouseX)>.001||Math.abs(mouseTargetY-mouseY)>.001||needsPaint)raf=requestAnimationFrame(tick);
+ if(menuTransition||Math.abs(targetState-frameState)>.0001||Math.abs(mouseTargetX-mouseX)>.001||Math.abs(mouseTargetY-mouseY)>.001||needsPaint)raf=requestAnimationFrame(tick);
  else{raf=0;lastFrame=0}
 }
-function goTo(value){targetState=Math.max(0,Math.min(7,value));schedulePaint()}
+function goTo(value){menuTransition=null;targetState=Math.max(0,Math.min(7,value));schedulePaint()}
+function navigateTo(value){goTo(value);menuTransition={from:frameState,start:performance.now()}}
 paint(0);
 function consume(delta){
  const end=colorsTop(),y=scrollY;
@@ -124,8 +131,8 @@ window.addEventListener('scroll',()=>{
  else if(Math.abs(scrollY-base)<4&&frameState<1)goTo(1);
  else schedulePaint();
 },{passive:true});
-brand.addEventListener('click',e=>{e.preventDefault();goTo(0)});
-document.querySelectorAll('[data-scene-target]').forEach(link=>link.addEventListener('click',e=>{e.preventDefault();goTo(Number(link.dataset.sceneTarget))}));
+brand.addEventListener('click',e=>{e.preventDefault();navigateTo(0)});
+document.querySelectorAll('[data-scene-target]').forEach(link=>link.addEventListener('click',e=>{e.preventDefault();navigateTo(Number(link.dataset.sceneTarget))}));
 heroModel.addEventListener('error',()=>{document.querySelector('.story-error').hidden=false});
 
 // A small, damped response to pointer motion; disabled for touch and reduced motion.
@@ -177,28 +184,4 @@ function prepareLockHighlight(){
  })();return lockHighlightPromise;
 }
 
-// Anchor step descriptions below the product: 80px on mobile, 40px on desktop.
-function positionStepDescriptions(){
- if(!heroModel.loaded||frameState<3.999||frameState>6)return;
- const layoutKey=`${innerWidth}x${innerHeight}`;
- if(stepDescriptionLayoutKey===layoutKey)return;
- const d=heroModel.getDimensions(),orbit=heroModel.getCameraOrbit();
- const phi=orbit.phi,theta=orbit.theta,r=orbit.radius;
- const camera=[Math.sin(phi)*Math.sin(theta),Math.cos(phi),Math.sin(phi)*Math.cos(theta)];
- const up=[-Math.cos(phi)*Math.sin(theta),Math.sin(phi),-Math.cos(phi)*Math.cos(theta)];
- const box=layer.getBoundingClientRect(),focal=box.height/(2*Math.tan(heroModel.getFieldOfView()*Math.PI/360));
- let bottom=box.top+box.height/2;
- for(const x of [-d.x/2,d.x/2])for(let sample=0;sample<64;sample++){
-  const a=sample*Math.PI/32,y=d.y/2*Math.cos(a),z=d.z/2*Math.sin(a);
-  const depth=r-(x*camera[0]+y*camera[1]+z*camera[2]);
-  if(depth>0)bottom=Math.max(bottom,box.top+box.height/2-(x*up[0]+y*up[1]+z*up[2])*focal/depth);
- }
- const section=workflow.getBoundingClientRect();
- const copies=[...document.querySelectorAll('.workflow-copy')];
- const maxHeight=Math.max(...copies.map(copy=>copy.getBoundingClientRect().height));
- const descriptionGap=innerWidth<=760?80:40;
- const top=Math.max(0,Math.min(bottom-section.top+descriptionGap,section.height-maxHeight-32));
- copies.forEach(copy=>{copy.style.top=`${top}px`});
- stepDescriptionLayoutKey=layoutKey;
-}
 document.querySelectorAll('[data-goto-step]').forEach(button=>button.addEventListener('click',()=>goTo(4+Number(button.dataset.gotoStep))));

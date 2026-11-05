@@ -11,8 +11,9 @@ const story=document.querySelector('.story'),cards=[...document.querySelectorAll
 const workflow=document.querySelector('.workflow'),stepPanels=[...document.querySelectorAll('.workflow-panel')];
 function workflowTop(){return workflow.getBoundingClientRect().top+scrollY}
 const heroPicker=document.querySelector('.hero-color-picker');
-const specsSection=document.querySelector('.technical-specs');
+const specsSection=document.querySelector('.technical-specs'),showcaseSection=document.querySelector('.product-showcase'),showcaseModel=document.querySelector('#showcase-model');
 function specsTop(){return specsSection.getBoundingClientRect().top+scrollY}
+function showcaseScrollTop(){return showcaseSection.getBoundingClientRect().top+scrollY-document.querySelector('.header').getBoundingClientRect().height-24}
 const lifestyle=document.querySelector('.lifestyle-stage'),lifestylePhoto=lifestyle.querySelector('.lifestyle-photo');
 const lifestyleCopy=lifestyle.querySelector('.lifestyle-copy');
 const photoReady=lifestyle.querySelector('img').hasAttribute('src');lifestyle.hidden=!photoReady;
@@ -97,17 +98,18 @@ function updateSteps(state){
  document.querySelectorAll('[data-goto-step]').forEach(button=>{const active=Number(button.dataset.gotoStep)===selectedStep;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
 }
 function sceneScroll(state){const before=storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state);return before+(photoReady?(lifestyleTop()-workflowTop())*smooth(6,7,state)+sceneHeight()*(smooth(7,8,state)+smooth(8,9,state)):(specsTop()-workflowTop())*smooth(6,7,state))}
-let menuTransition=null,specsJumpTarget=null;
+let menuTransition=null,specsJumpTarget=null,photoGestureUntil=0;
 function schedulePaint(){needsPaint=true;if(!raf)raf=requestAnimationFrame(tick)}
 function tick(now){
  const dt=lastFrame?Math.min(40,now-lastFrame):16;lastFrame=now;
  const distance=targetState-frameState;
  const step=motionReduced?distance:Math.sign(distance)*Math.min(Math.abs(distance)*(1-Math.exp(-dt/160)),.022*dt/16);
- let state=Math.abs(distance)<.001?targetState:frameState+step;
+ let state=Math.abs(distance)<.001?targetState:frameState+step,navigationScroll=null;
  if(menuTransition){
   const progress=motionReduced?1:Math.max(0,Math.min(1,(now-menuTransition.start)/650));
   const ease=progress*progress*(3-2*progress);
   state=interpolate(menuTransition.from,targetState,ease);
+  if(menuTransition.scrollTo!==undefined)navigationScroll=interpolate(menuTransition.scrollFrom,menuTransition.scrollTo,ease);
   if(progress===1){state=targetState;menuTransition=null}
  }
  const sceneChanged=state!==frameState;
@@ -115,19 +117,24 @@ function tick(now){
  const pointerChanged=Math.abs(dx)>.001||Math.abs(dy)>.001;
  const follow=1-Math.exp(-dt/110);
  mouseX=pointerChanged?mouseX+dx*follow:mouseTargetX;mouseY=pointerChanged?mouseY+dy*follow:mouseTargetY;
- if(sceneChanged){const top=sceneScroll(state);lastSceneScroll=top;lastWrite=now;if(Math.abs(scrollY-top)>.5)window.scrollTo({top,behavior:'instant'})}
+ if(sceneChanged||navigationScroll!==null){const top=navigationScroll??sceneScroll(state);lastSceneScroll=top;lastWrite=now;if(Math.abs(scrollY-top)>.5)window.scrollTo({top,behavior:'instant'})}
  if(sceneChanged||pointerChanged||needsPaint){needsPaint=false;paint(state)}
  if(menuTransition||Math.abs(targetState-frameState)>.0001||Math.abs(mouseTargetX-mouseX)>.001||Math.abs(mouseTargetY-mouseY)>.001||needsPaint)raf=requestAnimationFrame(tick);
  else{raf=0;lastFrame=0}
 }
 function goTo(value){if(specsJumpTarget!==null){specsJumpTarget=null;window.scrollTo({top:scrollY,behavior:'instant'})}menuTransition=null;targetState=Math.max(0,Math.min(sceneEnd(),value));schedulePaint()}
-function navigateTo(value){goTo(value);menuTransition={from:frameState,start:performance.now()}}
+function navigateTo(value){photoGestureUntil=0;goTo(value);menuTransition={from:frameState,start:performance.now()}}
+function navigateToShowcase(){goTo(sceneEnd());menuTransition={from:frameState,start:performance.now(),scrollFrom:scrollY,scrollTo:showcaseScrollTop()}}
 paint(0);
-function jumpToSpecs(){specsJumpTarget=specsTop();window.scrollTo({top:specsJumpTarget,behavior:motionReduced?'instant':'smooth'})}
+function jumpToSpecs(){specsJumpTarget=showcaseScrollTop();window.scrollTo({top:specsJumpTarget,behavior:motionReduced?'instant':'smooth'})}
 function consume(delta){
  const end=controlledScrollEnd(),y=scrollY;
+ const now=performance.now();
+ if(delta>0&&now<photoGestureUntil){photoGestureUntil=now+180;return true}
+ if(photoReady&&delta>0&&frameState>=7.999&&frameState<9&&targetState<9){navigateTo(9);photoGestureUntil=now+180;return true}
+ if(photoReady&&delta>0&&menuTransition&&targetState===9&&frameState>=8){photoGestureUntil=now+180;return true}
  if(specsJumpTarget!==null){if(delta>0)return true;specsJumpTarget=null;window.scrollTo({top:y,behavior:'instant'})}
- if(photoReady&&delta>0&&frameState===sceneEnd()&&targetState===sceneEnd()&&y>=end-2&&y<specsTop()-2){jumpToSpecs();return true}
+ if(photoReady&&delta>0&&frameState===sceneEnd()&&targetState===sceneEnd()&&y>=end-2&&y<showcaseScrollTop()-2){jumpToSpecs();return true}
  if(photoReady&&y>end+2)return false;
  if(y>end+innerHeight*.7)return false;
  if(y>end+25){if(delta<0){goTo(sceneEnd());return true}return false}
@@ -135,8 +142,8 @@ function consume(delta){
  goTo(targetState+Math.max(-.14,Math.min(.14,delta/900)));return true;
 }
 window.addEventListener('wheel',e=>{if(e.ctrlKey||!e.deltaY||Math.abs(e.deltaX)>Math.abs(e.deltaY)||document.body.classList.contains('is-loading'))return;const units=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1;if(consume(e.deltaY*units))e.preventDefault()},{passive:false});
-window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction>0&&photoReady&&frameState===sceneEnd()&&scrollY>=controlledScrollEnd()-2&&scrollY<specsTop()-2){e.preventDefault();jumpToSpecs();return}if(direction&&scrollY<=controlledScrollEnd()+2&&!(direction>0&&frameState===sceneEnd()&&targetState===sceneEnd())){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
-window.addEventListener('touchstart',e=>{touchY=e.touches[0].clientY},{passive:true});window.addEventListener('touchmove',e=>{if(touchY===null)return;const next=e.touches[0].clientY,d=touchY-next;touchY=next;if(consume(d*2))e.preventDefault()},{passive:false});window.addEventListener('touchend',()=>{touchY=null},{passive:true});
+window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction>0&&photoReady&&frameState===sceneEnd()&&scrollY>=controlledScrollEnd()-2&&scrollY<showcaseScrollTop()-2){e.preventDefault();jumpToSpecs();return}if(direction&&scrollY<=controlledScrollEnd()+2&&!(direction>0&&frameState===sceneEnd()&&targetState===sceneEnd())){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
+window.addEventListener('touchstart',e=>{touchY=e.touches[0].clientY;photoGestureUntil=0},{passive:true});window.addEventListener('touchmove',e=>{if(touchY===null)return;const next=e.touches[0].clientY,d=touchY-next;touchY=next;if(consume(d*2))e.preventDefault()},{passive:false});window.addEventListener('touchend',()=>{touchY=null},{passive:true});
 let sceneEndBeforeResize=controlledScrollEnd(),layoutWidth=innerWidth,layoutHeight=sceneHeight();
 window.addEventListener('resize',()=>{
  const width=document.documentElement.clientWidth,height=sceneHeight();
@@ -159,6 +166,7 @@ window.addEventListener('scroll',()=>{
 },{passive:true});
 brand.addEventListener('click',e=>{e.preventDefault();navigateTo(0)});
 document.querySelectorAll('[data-scene-target]').forEach(link=>link.addEventListener('click',e=>{e.preventDefault();navigateTo(Number(link.dataset.sceneTarget))}));
+document.querySelector('[data-showcase-target]').addEventListener('click',e=>{e.preventDefault();navigateToShowcase()});
 heroModel.addEventListener('error',()=>{document.querySelector('.story-error').hidden=false});
 
 // A small, damped response to pointer motion; disabled for touch and reduced motion.
@@ -188,13 +196,19 @@ let selectedFinish='silver',originalFinishes=[],lockHighlightTexture=null,lockHi
 function applyFinish(){
  const finish=finishes[selectedFinish];
  for(const {material,color,metallic,roughness} of originalFinishes){const pbr=material.pbrMetallicRoughness;pbr.setBaseColorFactor(finish.hex||color);pbr.setMetallicFactor(finish.hex?(material.name.includes('textile')?0:finish.metallic):metallic);pbr.setRoughnessFactor(finish.hex?(material.name.includes('textile')?.86:finish.roughness):roughness)}
- const locks=heroModel.model?.materials.find(material=>material.name==='Aluminum with printed lock symbols');
- if(locks){const highlight=(selectedFinish==='black'||selectedFinish==='blue')&&lockHighlightTexture;locks.emissiveTexture.setTexture(highlight||null);locks.setEmissiveFactor(highlight?[.32,.36,.40]:[0,0,0])}
+ for(const viewer of [heroModel,showcaseModel]){const locks=viewer.model?.materials.find(material=>material.name==='Aluminum with printed lock symbols');
+ if(locks){const highlight=(selectedFinish==='black'||selectedFinish==='blue')&&lockHighlightTexture;locks.emissiveTexture.setTexture(highlight||null);locks.setEmissiveFactor(highlight?[.32,.36,.40]:[0,0,0])}}
  document.querySelectorAll('.color-swatch').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.color===selectedFinish)));
  document.querySelectorAll('.color-name').forEach(label=>{label.textContent=finish.name});
 }
-function rememberFinishes(){originalFinishes=heroModel.model.materials.filter(material=>material.name!=='Recessed dark hardware').map(material=>({material,color:[...material.pbrMetallicRoughness.baseColorFactor],metallic:material.pbrMetallicRoughness.metallicFactor,roughness:material.pbrMetallicRoughness.roughnessFactor}));applyFinish();prepareLockHighlight().catch(error=>console.error('Lock highlights failed',error))}
-heroModel.addEventListener('load',rememberFinishes,{once:true});if(heroModel.loaded)rememberFinishes();
+function rememberFinishes(viewer){
+ const materials=viewer.model.materials.filter(material=>material.name!=='Recessed dark hardware');
+ originalFinishes.push(...materials.map(material=>({material,color:[...material.pbrMetallicRoughness.baseColorFactor],metallic:material.pbrMetallicRoughness.metallicFactor,roughness:material.pbrMetallicRoughness.roughnessFactor})));
+ applyFinish();
+ if(viewer===heroModel)prepareLockHighlight().catch(error=>console.error('Lock highlights failed',error));
+}
+for(const viewer of [heroModel,showcaseModel]){viewer.addEventListener('load',()=>rememberFinishes(viewer),{once:true});if(viewer.loaded)rememberFinishes(viewer)}
+showcaseModel.addEventListener('load',()=>{showcaseModel.animationName='Device workflow';showcaseModel.pause();showcaseModel.currentTime=0});
 document.querySelectorAll('.color-swatch').forEach(button=>button.addEventListener('click',()=>{selectedFinish=button.dataset.color;applyFinish()}));
 
 // Only the printed glyph pixels receive a light gray contribution on dark finishes.
@@ -211,3 +225,6 @@ function prepareLockHighlight(){
 }
 
 document.querySelectorAll('[data-goto-step]').forEach(button=>button.addEventListener('click',()=>goTo(4+Number(button.dataset.gotoStep))));
+
+const cookieDialog=document.querySelector('#cookie-settings');
+document.querySelector('.footer-cookie-button').addEventListener('click',()=>cookieDialog.showModal());

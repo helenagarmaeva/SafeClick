@@ -276,3 +276,24 @@ if(!motionReduced){
  entranceObserver.observe(showcaseSection);entranceObserver.observe(footer);
  document.addEventListener('site-ready',()=>{if(restoring||frameState>0)return;heroPicker.querySelectorAll('.color-swatch').forEach((el,i)=>el.animate([{opacity:0,transform:'translateY(10px) scale(.75)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:700,delay:450+i*70,easing:'cubic-bezier(.16,1,.3,1)',fill:'backwards'}));heroEntrance=heroModel.animate([{opacity:0,transform:'translateY(16px) scale(.96)'},{opacity:1,transform:'translateY(0) scale(1)'}],{duration:950,delay:180,easing:'cubic-bezier(.16,1,.3,1)',fill:'backwards'})},{once:true});
 }
+
+// Fit the full product on narrow screens, including when the user rotates it vertically.
+let showcaseFitKey='';
+function fitShowcaseCamera(){
+ if(!showcaseModel.loaded)return;
+ const width=showcaseModel.clientWidth,height=showcaseModel.clientHeight;
+ if(!width||!height)return;
+ const key=`${innerWidth}x${width}x${height}`;if(key===showcaseFitKey)return;showcaseFitKey=key;
+ const orbit=showcaseModel.getCameraOrbit(),theta=orbit.theta*180/Math.PI,phi=orbit.phi*180/Math.PI;
+ if(innerWidth<=760){
+  const d=showcaseModel.getDimensions(),radius=Math.hypot(d.x,d.y,d.z)/2;
+  const vertical=30*Math.PI/180,horizontal=2*Math.atan(Math.tan(vertical/2)*width/height);
+  const distance=1.08*radius/Math.sin(Math.min(vertical,horizontal)/2);
+  showcaseModel.cameraOrbit=`${theta}deg ${phi}deg ${distance}m`;
+ }else showcaseModel.cameraOrbit=`${theta}deg ${phi}deg 90%`;
+ showcaseModel.jumpCameraToGoal();
+}
+showcaseModel.setAttribute('min-camera-orbit','auto auto 0.01m');showcaseModel.setAttribute('max-camera-orbit','auto auto 1m');
+showcaseModel.addEventListener('load',()=>{showcaseFitKey='';requestAnimationFrame(fitShowcaseCamera)});
+new ResizeObserver(fitShowcaseCamera).observe(showcaseModel);
+if(showcaseModel.loaded)fitShowcaseCamera();

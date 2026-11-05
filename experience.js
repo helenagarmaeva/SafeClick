@@ -117,11 +117,11 @@ document.querySelectorAll('a:not(.header-brand),button,summary').forEach(control
  control.replaceChildren(wrap);control.classList.add('roll-control');
 });
 
-const finishes={black:{name:'Schwarz',hex:'#292b2d'},rose:{name:'Rosé',hex:'#bd9693'},silver:{name:'Silber',hex:null},green:{name:'Limettengrün',hex:'#a1b745'},blue:{name:'Blaugrau',hex:'#526d7d'}};
+const finishes={black:{name:'Schwarz',hex:'#3c3e40',metallic:.75,roughness:.58},rose:{name:'Rosé',hex:'#d3a198',metallic:.78,roughness:.52},silver:{name:'Silber',hex:null},blue:{name:'Stahlblau',hex:'#8fb8ce',metallic:.7,roughness:.55}};
 let selectedFinish='silver',originalFinishes=[],lockHighlightTexture=null,lockHighlightPromise=null;
 function applyFinish(){
  const finish=finishes[selectedFinish];
- for(const {material,color,metallic,roughness} of originalFinishes){const pbr=material.pbrMetallicRoughness;pbr.setBaseColorFactor(finish.hex||color);pbr.setMetallicFactor(finish.hex?(material.name.includes('textile')?0:.85):metallic);pbr.setRoughnessFactor(finish.hex?(material.name.includes('textile')?.86:selectedFinish==='black'?.62:.52):roughness)}
+ for(const {material,color,metallic,roughness} of originalFinishes){const pbr=material.pbrMetallicRoughness;pbr.setBaseColorFactor(finish.hex||color);pbr.setMetallicFactor(finish.hex?(material.name.includes('textile')?0:finish.metallic):metallic);pbr.setRoughnessFactor(finish.hex?(material.name.includes('textile')?.86:finish.roughness):roughness)}
  const locks=heroModel.model?.materials.find(material=>material.name==='Aluminum with printed lock symbols');
  if(locks){const highlight=(selectedFinish==='black'||selectedFinish==='blue')&&lockHighlightTexture;locks.emissiveTexture.setTexture(highlight||null);locks.setEmissiveFactor(highlight?[.32,.36,.40]:[0,0,0])}
  document.querySelectorAll('.color-swatch').forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.color===selectedFinish)));

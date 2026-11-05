@@ -16,7 +16,7 @@ function colorsTop(){return colorSection.getBoundingClientRect().top+scrollY}
 const lifestyle=document.querySelector('.lifestyle-stage'),lifestylePhoto=lifestyle.querySelector('.lifestyle-photo');
 const photoReady=lifestyle.querySelector('img').hasAttribute('src');lifestyle.hidden=!photoReady;
 function lifestyleTop(){return lifestyle.getBoundingClientRect().top+scrollY}
-function colorStart(){return photoReady?7:6}
+function colorStart(){return photoReady?8:6}
 function sceneEnd(){return colorStart()+1}
 const layer=document.createElement('div');layer.className='shared-product';layer.append(heroModel);document.body.append(layer);
 const morph=document.createElement('div');morph.className='brand-morph';morph.textContent='SafeClick';morph.setAttribute('aria-hidden','true');morph.hidden=true;document.body.append(morph);
@@ -62,7 +62,7 @@ function paint(state){
  // Entry masks never animate during exit: fade the complete paragraph block.
  heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
  heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
- if(photoReady){const reveal=smooth(6,7,state);lifestylePhoto.style.transform=`scale(${interpolate(mobile?.55:.32,1,reveal)})`;lifestylePhoto.style.visibility=reveal>0&&scrollY<=colorsTop()?'visible':'hidden';lifestylePhoto.style.opacity=String(smooth(6,6.12,state)*(1-colorProgress))}
+ if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`}
  updateCards(state);
  updateSteps(state);
  colorHeading.style.opacity=String(colorProgress);colorPicker.style.opacity=String(colorProgress);colorPicker.inert=colorProgress<.9;colorHeading.style.visibility=colorPicker.style.visibility=colorProgress>.001?'visible':'hidden';colorShadow.style.opacity=String(colorProgress);
@@ -82,7 +82,7 @@ function updateSteps(state){
  workflow.dataset.step=String(selectedStep);
  document.querySelectorAll('[data-goto-step]').forEach(button=>{const active=Number(button.dataset.gotoStep)===selectedStep;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
 }
-function sceneScroll(state){const before=storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state);return before+(photoReady?(lifestyleTop()-workflowTop())*smooth(6,7,state)+(colorsTop()-lifestyleTop())*smooth(7,8,state):(colorsTop()-workflowTop())*smooth(6,7,state))}
+function sceneScroll(state){const before=storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state);return before+(photoReady?(lifestyleTop()-workflowTop())*smooth(6,7,state)+sceneHeight()*smooth(7,8,state)+(colorsTop()-lifestyleTop()-sceneHeight())*smooth(8,9,state):(colorsTop()-workflowTop())*smooth(6,7,state))}
 let menuTransition=null;
 function schedulePaint(){needsPaint=true;if(!raf)raf=requestAnimationFrame(tick)}
 function tick(now){

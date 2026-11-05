@@ -35,7 +35,7 @@ model-viewer::part(default-progress-bar){display:none}
  .copy p{font-size:14px;line-height:1.35}
 }
 </style>
-<link rel="stylesheet" href="./experience.css?v=technical-specs-37">
+<link rel="stylesheet" href="./experience.css?v=specs-lines-41">
 <noscript><style>.page-loader{display:none}</style></noscript>
 </head>
 <body>
@@ -81,14 +81,14 @@ model-viewer::part(default-progress-bar){display:none}
 </section>
 <section class="lifestyle-stage" id="produkt" hidden aria-label="SafeClick im Alltag"><div class="lifestyle-pin"><div class="lifestyle-photo"><img src="./assets/images/Парк.png" decoding="async" alt="SafeClick am Hosenbund bei einem Spaziergang im Park"><div class="copy lifestyle-copy" aria-hidden="true"><h2>Klein genug für jeden Tag.<br>Wichtig, wenn es darauf ankommt.</h2><p>Mehr Selbstständigkeit für dich. Ein gutes Gefühl für deine Liebsten.</p></div></div></div></section>
 <section class="technical-specs" id="technische-eigenschaften" aria-labelledby="specs-title">
- <h2 id="specs-title">Technische Eigenschaften</h2>
+ <h2 id="specs-title" data-spec-reveal>Technische Eigenschaften</h2>
  <ul class="specs-list">
-  <li>Eigenständige Mobilfunkverbindung</li>
-  <li>Integrierte Standortbestimmung</li>
-  <li>Zweistufige Aktivierung</li>
-  <li>Kompaktes Gehäuse</li>
-  <li>Energieeffiziente Technik</li>
-  <li>Geplante professionelle SOS-Anbindung</li>
+  <li data-spec-reveal>Eigenständige Mobilfunkverbindung</li>
+  <li data-spec-reveal>Integrierte Standortbestimmung</li>
+  <li data-spec-reveal>Zweistufige Aktivierung</li>
+  <li data-spec-reveal>Kompaktes Gehäuse</li>
+  <li data-spec-reveal>Energieeffiziente Technik</li>
+  <li data-spec-reveal>Geplante professionelle SOS-Anbindung</li>
  </ul>
 </section>
 <section class="legal" aria-label="Rechtliche Informationen"><details id="datenschutz"><summary>Datenschutz</summary><p>Im ausgeschalteten Zustand findet keine Standortübertragung statt. Die vollständige Datenschutzerklärung für diese Website wird ergänzt, sobald die Angaben des Betreibers vorliegen.</p></details><details id="impressum"><summary>Impressum</summary><p>Die rechtlichen Anbieter- und Kontaktangaben für diese Website werden ergänzt, sobald sie vom Betreiber bereitgestellt werden.</p></details></section>
@@ -114,7 +114,8 @@ const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 function startEntrance(){if(!reduced){
   const ease='cubic-bezier(.16,1,.3,1)';
   const animate=(el,frames,options)=>el.animate(frames,{fill:'backwards',easing:ease,...options});
-  const textBlocks=[...document.querySelectorAll('[data-type]')];
+  const specsBlocks=[...document.querySelectorAll('[data-spec-reveal]')],revealedSpecs=new Set();
+  const textBlocks=[...document.querySelectorAll('[data-type]'),...specsBlocks];
   textBlocks.forEach(el=>{el.dataset.original=el.textContent;el.setAttribute('aria-label',el.textContent)});
   function revealLines(withMotion){
     textBlocks.forEach(el=>{el.textContent=el.dataset.original});
@@ -132,12 +133,21 @@ function startEntrance(){if(!reduced){
       groups.forEach((group,lineIndex)=>{
         const mask=document.createElement('span');mask.className='line-mask';mask.setAttribute('aria-hidden','true');const lineHeight=parseFloat(getComputedStyle(el).lineHeight);mask.style.lineHeight=`${lineHeight}px`;mask.style.top=`${group.top-bounds.top-(lineHeight-group.height)/2}px`;
         const line=document.createElement('span');line.className='line-text';line.textContent=text.slice(group.start,group.end);mask.append(line);el.append(mask);
-        if(withMotion)animate(line,[{transform:'translateY(125%)',opacity:0},{transform:'translateY(0)',opacity:1}],{duration:950,delay:140+blockIndex*160+lineIndex*115});
+        if(el.hasAttribute('data-spec-reveal')&&!revealedSpecs.has(el)){line.style.opacity='0';line.style.transform='translateY(125%)'}
+        if(withMotion&&!el.hasAttribute('data-spec-reveal'))animate(line,[{transform:'translateY(125%)',opacity:0},{transform:'translateY(0)',opacity:1}],{duration:950,delay:140+blockIndex*160+lineIndex*115});
       });
     });
     fitHero();
   }
   revealLines(true);
+  document.querySelector('.specs-list').classList.add('spec-lines-ready');
+  const specsObserver=new IntersectionObserver(entries=>{entries.forEach(entry=>{
+    if(!entry.isIntersecting)return;
+    const el=entry.target;revealedSpecs.add(el);el.classList.add('is-revealed');
+    el.querySelectorAll('.line-text').forEach((line,index)=>{line.style.opacity='1';line.style.transform='none';animate(line,[{transform:'translateY(125%)',opacity:0},{transform:'translateY(0)',opacity:1}],{duration:950,delay:140+index*115})});
+    specsObserver.unobserve(el);
+  })},{threshold:.2});
+  specsBlocks.forEach(el=>specsObserver.observe(el));
   let previousWidth=innerWidth,resizeTimer;
   window.addEventListener('resize',()=>{if(previousWidth===innerWidth)return;previousWidth=innerWidth;clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>revealLines(false),100)});
   document.querySelectorAll('.nav>a,.menu-toggle').forEach((el,i)=>animate(el,[{opacity:0,transform:'translateY(-12px)'},{opacity:1,transform:'translateY(0)'}],{duration:850,delay:800+i*65}));
@@ -149,6 +159,6 @@ document.addEventListener('site-ready',()=>document.fonts.ready.then(startEntran
 const model=document.querySelector('#model'),status=document.querySelector('#status');model.addEventListener('load',()=>{status.hidden=true});model.addEventListener('error',()=>{status.textContent='Das 3D-Modell konnte nicht geladen werden. Bitte lade die Seite erneut.'});
 const toggle=document.querySelector('.menu-toggle'),nav=document.querySelector('.nav');toggle.addEventListener('click',()=>{const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));nav.classList.toggle('open',open)});nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');toggle.setAttribute('aria-expanded','false')}));document.addEventListener('keydown',e=>{if(e.key==='Escape'){nav.classList.remove('open');toggle.setAttribute('aria-expanded','false')}});document.querySelectorAll('a[href="#datenschutz"],a[href="#impressum"]').forEach(a=>a.addEventListener('click',()=>{document.querySelector(a.getAttribute('href')).open=true}));
 </script>
-<script src="./experience.js?v=technical-specs-37"></script>
+<script src="./experience.js?v=specs-lines-41"></script>
 </body>
 </html>

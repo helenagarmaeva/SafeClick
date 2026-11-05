@@ -63,11 +63,25 @@ function paint(state){
  // Entry masks never animate during exit: fade the complete paragraph block.
  heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
  heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
- if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`;const shade=smooth(8,9,state),text=smooth(8.08,8.85,state);lifestylePhoto.style.setProperty('--photo-dim',String(shade*.28));lifestyleCopy.style.opacity=String(text);lifestyleCopy.setAttribute('aria-hidden',String(text<.5))}
+ if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`;lifestylePhoto.style.borderRadius=`${interpolate(24,0,zoom)}px`;const shade=smooth(8,9,state),text=smooth(8.08,8.85,state);lifestylePhoto.style.setProperty('--photo-dim',String(shade*.28));lifestyleCopy.style.opacity=String(text);lifestyleCopy.setAttribute('aria-hidden',String(text<.5))}
  updateCards(state);
  updateSteps(state);
+ if(state>=3.25)positionWorkflowCopy(vh,mobile);
  brand.style.pointerEvents=t===1?'auto':'none';
  if(scrollY>specsTop()+vh*.7)morph.hidden=true;
+}
+// Use the product silhouette rather than paragraph height or the bottom of the screen.
+function positionWorkflowCopy(vh,mobile){
+ const dimensions=heroModel.loaded?heroModel.getDimensions():null;
+ const productRadius=dimensions?Math.min(dimensions.x,dimensions.y,dimensions.z)/2:.015;
+ const distance=.179346594*1.05;
+ const viewportHeight=vh*(mobile?.43:.76),center=vh*(mobile?.415:.54);
+ const focal=viewportHeight/(2*Math.tan(15*Math.PI/180));
+ const productBottom=center+focal*productRadius/Math.sqrt(distance*distance-productRadius*productRadius);
+ const preferredGap=parseFloat(getComputedStyle(workflow).getPropertyValue('--step-copy-gap'));
+ const maxCopyHeight=Math.max(...stepPanels.map(panel=>panel.querySelector('.workflow-copy').getBoundingClientRect().height));
+ const gap=Math.min(preferredGap,Math.max(24,vh-32-maxCopyHeight-productBottom));
+ workflow.style.setProperty('--step-copy-top',`${productBottom+gap}px`);
 }
 function smooth(a,b,value){const x=Math.max(0,Math.min(1,(value-a)/(b-a)));return x*x*(3-2*x)}
 function updateCards(state){
@@ -83,7 +97,7 @@ function updateSteps(state){
  document.querySelectorAll('[data-goto-step]').forEach(button=>{const active=Number(button.dataset.gotoStep)===selectedStep;button.classList.toggle('active',active);button.setAttribute('aria-pressed',String(active))});
 }
 function sceneScroll(state){const before=storyTop()*Math.min(1,state)+(workflowTop()-storyTop())*smooth(3,4,state);return before+(photoReady?(lifestyleTop()-workflowTop())*smooth(6,7,state)+sceneHeight()*(smooth(7,8,state)+smooth(8,9,state)):(specsTop()-workflowTop())*smooth(6,7,state))}
-let menuTransition=null;
+let menuTransition=null,specsJumpTarget=null;
 function schedulePaint(){needsPaint=true;if(!raf)raf=requestAnimationFrame(tick)}
 function tick(now){
  const dt=lastFrame?Math.min(40,now-lastFrame):16;lastFrame=now;
@@ -106,11 +120,14 @@ function tick(now){
  if(menuTransition||Math.abs(targetState-frameState)>.0001||Math.abs(mouseTargetX-mouseX)>.001||Math.abs(mouseTargetY-mouseY)>.001||needsPaint)raf=requestAnimationFrame(tick);
  else{raf=0;lastFrame=0}
 }
-function goTo(value){menuTransition=null;targetState=Math.max(0,Math.min(sceneEnd(),value));schedulePaint()}
+function goTo(value){if(specsJumpTarget!==null){specsJumpTarget=null;window.scrollTo({top:scrollY,behavior:'instant'})}menuTransition=null;targetState=Math.max(0,Math.min(sceneEnd(),value));schedulePaint()}
 function navigateTo(value){goTo(value);menuTransition={from:frameState,start:performance.now()}}
 paint(0);
+function jumpToSpecs(){specsJumpTarget=specsTop();window.scrollTo({top:specsJumpTarget,behavior:motionReduced?'instant':'smooth'})}
 function consume(delta){
  const end=controlledScrollEnd(),y=scrollY;
+ if(specsJumpTarget!==null){if(delta>0)return true;specsJumpTarget=null;window.scrollTo({top:y,behavior:'instant'})}
+ if(photoReady&&delta>0&&frameState===sceneEnd()&&targetState===sceneEnd()&&y>=end-2&&y<specsTop()-2){jumpToSpecs();return true}
  if(photoReady&&y>end+2)return false;
  if(y>end+innerHeight*.7)return false;
  if(y>end+25){if(delta<0){goTo(sceneEnd());return true}return false}
@@ -118,7 +135,7 @@ function consume(delta){
  goTo(targetState+Math.max(-.14,Math.min(.14,delta/900)));return true;
 }
 window.addEventListener('wheel',e=>{if(e.ctrlKey||!e.deltaY||Math.abs(e.deltaX)>Math.abs(e.deltaY)||document.body.classList.contains('is-loading'))return;const units=e.deltaMode===1?16:e.deltaMode===2?innerHeight:1;if(consume(e.deltaY*units))e.preventDefault()},{passive:false});
-window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction&&scrollY<=controlledScrollEnd()+2&&!(direction>0&&frameState===sceneEnd()&&targetState===sceneEnd())){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
+window.addEventListener('keydown',e=>{if(e.target.closest('input,textarea,select,button,summary'))return;const direction=['ArrowDown','PageDown',' '].includes(e.key)?1:['ArrowUp','PageUp'].includes(e.key)?-1:0;if(direction>0&&photoReady&&frameState===sceneEnd()&&scrollY>=controlledScrollEnd()-2&&scrollY<specsTop()-2){e.preventDefault();jumpToSpecs();return}if(direction&&scrollY<=controlledScrollEnd()+2&&!(direction>0&&frameState===sceneEnd()&&targetState===sceneEnd())){e.preventDefault();goTo(direction>0?Math.floor(targetState+.01)+1:Math.ceil(targetState-.01)-1)}});
 window.addEventListener('touchstart',e=>{touchY=e.touches[0].clientY},{passive:true});window.addEventListener('touchmove',e=>{if(touchY===null)return;const next=e.touches[0].clientY,d=touchY-next;touchY=next;if(consume(d*2))e.preventDefault()},{passive:false});window.addEventListener('touchend',()=>{touchY=null},{passive:true});
 let sceneEndBeforeResize=controlledScrollEnd(),layoutWidth=innerWidth,layoutHeight=sceneHeight();
 window.addEventListener('resize',()=>{
@@ -130,6 +147,7 @@ window.addEventListener('resize',()=>{
  schedulePaint();
 });new ResizeObserver(schedulePaint).observe(slot);
 window.addEventListener('scroll',()=>{
+ if(specsJumpTarget!==null&&Math.abs(scrollY-specsJumpTarget)<2)specsJumpTarget=null;
  if(lastSceneScroll!==null&&Math.abs(scrollY-lastSceneScroll)<2)return;
  if(Math.abs(targetState-frameState)>.0001||performance.now()-lastWrite<120)return;
  const base=storyTop();

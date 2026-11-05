@@ -52,9 +52,13 @@ body{isolation:isolate}
 .glass-card h2{margin:0 0 24px}
 .glass-card p{font-size:clamp(14px,1.45vw,16px)}
 /* Operation-step type, description rhythm and interactive progress dots. */
-.workflow-copy,.workflow-panel[data-step="1"] .workflow-copy{font-size:20px;bottom:auto;top:calc(66% + 32px)}
+.workflow-copy,.workflow-panel[data-step="1"] .workflow-copy{font-size:20px;bottom:auto;top:calc(66% + 40px)}
 .workflow-heading h2{font-size:clamp(24px,3vw,40px);margin-bottom:16px}
 .step-dots{gap:8px;pointer-events:auto}
 .step-dots button{display:block;flex:none;width:12px;height:12px;padding:0;border:1px solid var(--blue);border-radius:50%;background:transparent;cursor:pointer}
 .step-dots button.active{background:var(--blue)}
 .step-dots button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
+/* Final hero sizes from the latest annotation. */
+.hero h1{font-size:80px}
+.heading .eyebrow{font-size:16px}
+@media(max-width:360px){.hero h1{font-size:clamp(56px,20vw,80px)}}

@@ -17,7 +17,7 @@ const layer=document.createElement('div');layer.className='shared-product';layer
 const morph=document.createElement('div');morph.className='brand-morph';morph.textContent='SafeClick';morph.setAttribute('aria-hidden','true');morph.hidden=true;document.body.append(morph);
 heroModel.removeAttribute('camera-controls');heroModel.setAttribute('disable-zoom','');heroModel.setAttribute('disable-pan','');heroModel.setAttribute('tabindex','-1');
 heroModel.addEventListener('load',()=>{heroModel.animationName='Device workflow';heroModel.pause();heroModel.currentTime=0});
-let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0,mouseX=0,mouseY=0,mouseTargetX=0,mouseTargetY=0,mouseRaf=0;
+let phase=0,angle=0,touchY=null,frameState=0,targetState=0,raf=0,lastFrame=0,lastWrite=0,mouseX=0,mouseY=0,mouseTargetX=0,mouseTargetY=0,mouseRaf=0,stepDescriptionLayoutKey='';
 const motionReduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 function storyTop(){return story.getBoundingClientRect().top+scrollY}
@@ -38,7 +38,7 @@ function paint(state){
  const roll=interpolate(interpolate(40,-12,t)+180*spin,360,operation)+360*colorProgress;
  heroModel.orientation=`${-roll}deg ${28*Math.sin(spin*Math.PI)*(1-operation)}deg 0deg`;
  heroModel.shadowIntensity=0;
- if(heroModel.loaded){heroModel.currentTime=Math.max(0,Math.min(3,state-3));}
+ if(heroModel.loaded){heroModel.currentTime=Math.max(0,Math.min(4,state-3));}
  const radius=interpolate(90,mobile?145:130,t);heroModel.cameraOrbit=`${angle+mouseX*3*pointerGain}deg ${tilt}deg ${radius}%`;heroModel.style.transform=`translate(${mouseX*6*pointerGain}px,${mouseY*4*pointerGain}px) rotate(0deg)`;if(heroModel.jumpCameraToGoal)heroModel.jumpCameraToGoal();
  const titleRect=title.getBoundingClientRect(),target=brand.getBoundingClientRect();const size=parseFloat(getComputedStyle(title).fontSize),brandSize=parseFloat(getComputedStyle(brand).fontSize);
  morph.style.left=`${interpolate(titleRect.left,target.left,t)}px`;morph.style.top=`${interpolate(titleRect.top+scrollY,target.top,t)}px`;morph.style.fontSize=`${interpolate(size,brandSize,t)}px`;morph.style.letterSpacing=`${interpolate(-.065*size,-1.2,t)}px`;
@@ -144,9 +144,11 @@ function prepareLockHighlight(){
  })();return lockHighlightPromise;
 }
 
-// Place copy 32px below the projected product bounds, keeping small screens usable.
+// Anchor all step descriptions 40px below the product; only opacity changes during scrolling.
 function positionStepDescriptions(){
- if(!heroModel.loaded)return;
+ if(!heroModel.loaded||frameState<3.999||frameState>6)return;
+ const layoutKey=`${innerWidth}x${innerHeight}`;
+ if(stepDescriptionLayoutKey===layoutKey)return;
  const d=heroModel.getDimensions(),orbit=heroModel.getCameraOrbit();
  const phi=orbit.phi,theta=orbit.theta,r=orbit.radius;
  const camera=[Math.sin(phi)*Math.sin(theta),Math.cos(phi),Math.sin(phi)*Math.cos(theta)];
@@ -159,6 +161,10 @@ function positionStepDescriptions(){
   if(depth>0)bottom=Math.max(bottom,box.top+box.height/2-(x*up[0]+y*up[1]+z*up[2])*focal/depth);
  }
  const section=workflow.getBoundingClientRect();
- document.querySelectorAll('.workflow-copy').forEach(copy=>{const top=Math.min(bottom-section.top+32,section.height-copy.getBoundingClientRect().height-32);copy.style.top=`${Math.max(0,top)}px`});
+ const copies=[...document.querySelectorAll('.workflow-copy')];
+ const maxHeight=Math.max(...copies.map(copy=>copy.getBoundingClientRect().height));
+ const top=Math.max(0,Math.min(bottom-section.top+40,section.height-maxHeight-32));
+ copies.forEach(copy=>{copy.style.top=`${top}px`});
+ stepDescriptionLayoutKey=layoutKey;
 }
 document.querySelectorAll('[data-goto-step]').forEach(button=>button.addEventListener('click',()=>goTo(4+Number(button.dataset.gotoStep))));

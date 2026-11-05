@@ -33,22 +33,22 @@ model-viewer::part(default-progress-bar){display:none}
  .copy p{font-size:14px;line-height:1.35}
 }
 </style>
-<link rel="stylesheet" href="./experience.css?v=stable-scene-25">
+<link rel="stylesheet" href="./experience.css?v=fixed-webgl-viewport-26">
 <noscript><style>.page-loader{display:none}</style></noscript>
 </head>
 <body>
 <div class="page-loader" role="progressbar" aria-label="Website wird geladen" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div class="loader-track"><span></span></div></div>
-<div class="screen">
+<div class="screen" id="intro">
 <header class="header"><a class="header-brand" href="#" aria-label="SafeClick Startseite">SafeClick</a>
 <button class="menu-toggle" aria-expanded="false" aria-controls="navigation">Menü</button>
 <nav class="nav" id="navigation" aria-label="Hauptnavigation">
-<a href="#ueber">Über SafeClick</a><a href="#funktion">So funktioniert es</a><a href="#datenschutz">Datenschutz</a><a href="#impressum">Impressum</a><a class="cta" href="#funktion">Mehr erfahren</a>
+<a href="#intro" data-scene-target="0">Intro</a><a href="#bedienung" data-scene-target="4">Funktionsweise</a><a role="link" aria-disabled="true">Produkt</a><a class="cta" href="#funktion">Mehr erfahren</a>
 </nav>
 </header>
 <main class="hero"><div class="hero-content">
 <div class="heading"><p class="eyebrow" data-type>Dein Weg. Dein Gefühl von Sicherheit.</p><h1 data-type>SafeClick</h1></div>
 <div class="product">
-<model-viewer id="model" src="./assets/metal-capsule-workflow.glb?v=stable-scene-25" alt="SafeClick 3D-Produkt. Die Ansicht folgt dem Seitenverlauf." disable-zoom disable-pan camera-orbit="0deg 85deg 90%" field-of-view="30deg" shadow-intensity="0" exposure="1.1" interaction-prompt="none" touch-action="pan-y"></model-viewer>
+<model-viewer id="model" src="./assets/metal-capsule-workflow.glb?v=fixed-webgl-viewport-26" alt="SafeClick 3D-Produkt. Die Ansicht folgt dem Seitenverlauf." disable-zoom disable-pan camera-orbit="0deg 85deg 90%" field-of-view="30deg" shadow-intensity="0" exposure="1.1" interaction-prompt="none" touch-action="pan-y"></model-viewer>
 <div class="hero-color-picker"><div class="color-options" role="group" aria-label="Produktfarbe auf der Startseite auswählen">
   <button class="color-swatch" type="button" data-color="silver" aria-label="Silber" aria-pressed="true" style="--swatch:#c3c6c7"></button>
   <button class="color-swatch" type="button" data-color="black" aria-label="Schwarz" aria-pressed="false" style="--swatch:#3c3e40"></button>
@@ -145,6 +145,6 @@ document.addEventListener('site-ready',startEntrance,{once:true});
 const model=document.querySelector('#model'),status=document.querySelector('#status');model.addEventListener('load',()=>{status.hidden=true});model.addEventListener('error',()=>{status.textContent='Das 3D-Modell konnte nicht geladen werden. Bitte lade die Seite erneut.'});
 const toggle=document.querySelector('.menu-toggle'),nav=document.querySelector('.nav');toggle.addEventListener('click',()=>{const open=toggle.getAttribute('aria-expanded')!=='true';toggle.setAttribute('aria-expanded',String(open));nav.classList.toggle('open',open)});nav.querySelectorAll('a').forEach(a=>a.addEventListener('click',()=>{nav.classList.remove('open');toggle.setAttribute('aria-expanded','false')}));document.addEventListener('keydown',e=>{if(e.key==='Escape'){nav.classList.remove('open');toggle.setAttribute('aria-expanded','false')}});document.querySelectorAll('a[href="#datenschutz"],a[href="#impressum"]').forEach(a=>a.addEventListener('click',()=>{document.querySelector(a.getAttribute('href')).open=true}));
 </script>
-<script src="./experience.js?v=stable-scene-25"></script>
+<script src="./experience.js?v=fixed-webgl-viewport-26"></script>
 </body>
 </html>

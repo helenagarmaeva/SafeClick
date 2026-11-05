@@ -70,3 +70,5 @@ body{isolation:isolate}
 }
 
 html,body{overflow-anchor:none;overscroll-behavior-y:none}
+
+.shared-product{transform-origin:50% 50%;will-change:transform;backface-visibility:hidden}

@@ -30,9 +30,14 @@ function paint(state){
  const heroY=rect.top+scrollY;const mobile=vw<=760;
  const operation=smooth(3,4,state),colorProgress=smooth(6,7,state);
  const end={left:mobile?vw*.025:vw*.12,top:mobile?interpolate(interpolate(vh*.09,vh*.2,operation),vh*.25,colorProgress):interpolate(interpolate(vh*.12,vh*.16,operation),vh*.23,colorProgress),width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
- // The hero rectangle is in document coordinates so that it does not jump with scroll.
- layer.style.left=`${interpolate(rect.left,end.left,t)}px`;layer.style.top=`${interpolate(heroY,end.top,t)}px`;
- layer.style.width=`${interpolate(rect.width,end.width,t)}px`;layer.style.height=`${interpolate(Math.max(80,rect.height-86),end.height,t)}px`;
+ // Keep the WebGL viewport constant during scrolling. Only the compositor layer moves/scales.
+ const visualHeight=interpolate(Math.max(80,rect.height-86),end.height,t);
+ const centerX=interpolate(rect.left+rect.width/2,end.left+end.width/2,t);
+ const centerY=interpolate(heroY+Math.max(80,rect.height-86)/2,end.top+end.height/2,t);
+ const scale=visualHeight/end.height;
+ layer.style.left='0px';layer.style.top='0px';
+ layer.style.width=`${end.width}px`;layer.style.height=`${end.height}px`;
+ layer.style.transform=`translate3d(${centerX-end.width/2}px,${centerY-end.height/2}px,0) scale(${scale})`;
  layer.style.opacity=(scrollY>colorsTop()+vh*.65)?'0':'1';
  const spin=Math.max(0,Math.min(2,state-1));
  angle=interpolate(interpolate(0,-8,t)-35*Math.sin(spin*Math.PI),0,operation);
@@ -120,6 +125,7 @@ window.addEventListener('scroll',()=>{
  else schedulePaint();
 },{passive:true});
 brand.addEventListener('click',e=>{e.preventDefault();goTo(0)});
+document.querySelectorAll('[data-scene-target]').forEach(link=>link.addEventListener('click',e=>{e.preventDefault();goTo(Number(link.dataset.sceneTarget))}));
 heroModel.addEventListener('error',()=>{document.querySelector('.story-error').hidden=false});
 
 // A small, damped response to pointer motion; disabled for touch and reduced motion.

@@ -62,3 +62,6 @@ body{isolation:isolate}
 .hero h1{font-size:80px}
 .heading .eyebrow{font-size:16px}
 @media(max-width:360px){.hero h1{font-size:clamp(56px,20vw,80px)}}
+/* Center the compact color group independently of surrounding content widths. */
+.hero-color-picker,.color-picker{left:50%;right:auto;width:max-content;max-width:100%;transform:translateX(-50%)}
+.color-options{width:max-content;max-width:100%;margin-inline:auto}

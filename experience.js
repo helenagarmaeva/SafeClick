@@ -31,7 +31,7 @@ function paint(state){
  const operation=smooth(3,4,state),colorProgress=smooth(6,7,state);
  const end={left:mobile?vw*.025:vw*.12,top:mobile?interpolate(interpolate(vh*.09,vh*.2,operation),vh*.25,colorProgress):interpolate(interpolate(vh*.12,vh*.16,operation),vh*.23,colorProgress),width:mobile?vw*.95:vw*.76,height:mobile?vh*.43:vh*.76};
  // Keep the WebGL viewport constant during scrolling. Only the compositor layer moves/scales.
- const visualHeight=interpolate(Math.max(80,rect.height-86),end.height,t);
+ const visualHeight=interpolate(Math.max(80,rect.height-86)*1.09,end.height,t);
  const centerX=interpolate(rect.left+rect.width/2,end.left+end.width/2,t);
  const centerY=interpolate(heroY+Math.max(80,rect.height-86)/2,end.top+end.height/2,t);
  const scale=visualHeight/end.height;
@@ -48,7 +48,7 @@ function paint(state){
  heroModel.shadowIntensity=0;
  if(heroModel.loaded){const time=Math.max(0,Math.min(4,state-3));if(Math.abs(heroModel.currentTime-time)>.00001)heroModel.currentTime=time;}
  // Neutral-model fit in meters preserves the previous size without auto-framing each pose.
- const radius=.179346594*interpolate(.69,1.05,t);heroModel.cameraOrbit=`${angle+mouseX*3*pointerGain}deg ${tilt}deg ${radius}m`;heroModel.style.transform=`translate(${mouseX*6*pointerGain}px,${mouseY*4*pointerGain}px) rotate(0deg)`;
+ const radius=.179346594*interpolate(.75,1.05,t);heroModel.cameraOrbit=`${angle+mouseX*3*pointerGain}deg ${tilt}deg ${radius}m`;heroModel.style.transform=`translate(${mouseX*6*pointerGain}px,${mouseY*4*pointerGain}px) rotate(0deg)`;
  const titleRect=title.getBoundingClientRect(),target=brand.getBoundingClientRect();const size=parseFloat(getComputedStyle(title).fontSize),brandSize=parseFloat(getComputedStyle(brand).fontSize);
  morph.style.left=`${interpolate(titleRect.left,target.left,t)}px`;morph.style.top=`${interpolate(titleRect.top+scrollY,target.top,t)}px`;morph.style.fontSize=`${interpolate(size,brandSize,t)}px`;morph.style.letterSpacing=`${interpolate(-.065*size,-1.2,t)}px`;
  morph.hidden=state===0;title.style.opacity=state===0?'1':'0';heading.querySelector('.eyebrow').style.opacity=String(1-t);

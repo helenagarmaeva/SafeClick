@@ -230,3 +230,5 @@ footer.site-footer{padding-top:40px}
 .showcase-color-picker{margin-top:32px}
 @media(max-width:760px){.product-showcase h2{margin-bottom:40px}.showcase-color-picker{margin-top:24px}}
 @media(max-height:740px){.product-showcase h2{margin-bottom:32px}.showcase-color-picker{margin-top:24px}}
+
+@media(min-width:761px){.product-showcase{padding-block:88px}}

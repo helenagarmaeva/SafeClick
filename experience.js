@@ -283,17 +283,17 @@ function fitShowcaseCamera(){
  if(!showcaseModel.loaded)return;
  const width=showcaseModel.clientWidth,height=showcaseModel.clientHeight;
  if(!width||!height)return;
- const key=`${innerWidth}x${width}x${height}`;if(key===showcaseFitKey)return;showcaseFitKey=key;
+ const vertical=showcaseModel.getFieldOfView()*Math.PI/180;
+ const key=`${innerWidth}x${width}x${height}x${vertical.toFixed(6)}`;if(key===showcaseFitKey)return;showcaseFitKey=key;
  const orbit=showcaseModel.getCameraOrbit(),theta=orbit.theta*180/Math.PI,phi=orbit.phi*180/Math.PI;
- {
-  const d=showcaseModel.getDimensions(),radius=Math.hypot(d.x,d.y,d.z)/2;
-  const vertical=30*Math.PI/180,horizontal=2*Math.atan(Math.tan(vertical/2)*width/height);
-  const distance=1.12*radius/Math.sin(Math.min(vertical,horizontal)/2);
-  showcaseModel.cameraOrbit=`${theta}deg ${phi}deg ${distance}m`;
- }
+ const d=showcaseModel.getDimensions(),radius=Math.hypot(d.x,d.y,d.z)/2;
+ const horizontal=2*Math.atan(Math.tan(vertical/2)*width/height);
+ const distance=1.04*radius/Math.sin(Math.min(vertical,horizontal)/2);
+ showcaseModel.cameraOrbit=`${theta}deg ${phi}deg ${distance}m`;
  showcaseModel.jumpCameraToGoal();
 }
 showcaseModel.setAttribute('min-camera-orbit','auto auto 0.01m');showcaseModel.setAttribute('max-camera-orbit','auto auto 1m');
 showcaseModel.addEventListener('load',()=>{showcaseFitKey='';requestAnimationFrame(fitShowcaseCamera)});
 new ResizeObserver(fitShowcaseCamera).observe(showcaseModel);
+showcaseModel.addEventListener('camera-change',fitShowcaseCamera);
 if(showcaseModel.loaded)fitShowcaseCamera();

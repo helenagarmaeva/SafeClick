@@ -225,3 +225,8 @@ footer.site-footer{padding-top:40px}
  .nav.open{align-items:flex-start;text-align:left;visibility:visible;opacity:1;pointer-events:auto;transform:none;transition-delay:0s}
  .nav.open>a,.nav>.price-cta{align-self:flex-start;text-align:left}
 }
+
+.product-showcase h2{margin-bottom:60px}
+.showcase-color-picker{margin-top:32px}
+@media(max-width:760px){.product-showcase h2{margin-bottom:40px}.showcase-color-picker{margin-top:24px}}
+@media(max-height:740px){.product-showcase h2{margin-bottom:32px}.showcase-color-picker{margin-top:24px}}

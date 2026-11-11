@@ -232,3 +232,8 @@ footer.site-footer{padding-top:40px}
 @media(max-height:740px){.product-showcase h2{margin-bottom:32px}.showcase-color-picker{margin-top:24px}}
 
 @media(min-width:761px){.product-showcase{padding-block:88px}}
+
+/* Reveal the supplied product close-up during the full-screen expansion. */
+.lifestyle-photo .lifestyle-detail{position:absolute;inset:0;object-position:50% 75%;opacity:var(--photo-detail,0)}
+.lifestyle-photo.is-detail .lifestyle-copy{left:auto;right:4%;width:min(480px,35%);transform:translateY(-50%);text-align:right;text-shadow:0 2px 12px #000}
+@media(max-width:760px){.lifestyle-photo.is-detail .lifestyle-copy{top:16%;left:50%;right:auto;width:88%;transform:translateX(-50%);text-align:center}.lifestyle-photo.is-detail .lifestyle-copy h2{font-size:clamp(20px,6vw,30px);margin-bottom:12px}}

@@ -15,7 +15,34 @@ const specsSection=document.querySelector('.technical-specs'),showcaseSection=do
 function specsTop(){return specsSection.getBoundingClientRect().top+scrollY}
 function showcaseScrollTop(){return showcaseSection.getBoundingClientRect().top+scrollY}
 const lifestyle=document.querySelector('.lifestyle-stage'),lifestylePhoto=lifestyle.querySelector('.lifestyle-photo');
-const lifestyleDetail=lifestyle.querySelector('.lifestyle-detail');
+const lifestyleVideo=lifestyle.querySelector('.lifestyle-video');
+const lifestylePin=lifestyle.querySelector('.lifestyle-pin');
+let lifestyleVisible=false, lifestyleFullscreen=false, lifestylePlaybackTimer=null;
+function updateLifestylePlayback(){
+ const canPlay=lifestyleVisible&&lifestyleFullscreen&&!document.hidden;
+ if(!canPlay){
+  clearTimeout(lifestylePlaybackTimer);
+  lifestylePlaybackTimer=null;
+  lifestyleVideo.pause();
+  lifestylePhoto.classList.remove('is-video');
+  return;
+ }
+ if(lifestylePlaybackTimer!==null||!lifestyleVideo.paused)return;
+ lifestylePlaybackTimer=setTimeout(()=>{
+  lifestylePlaybackTimer=null;
+  lifestyleVideo.muted=true;
+  lifestyleVideo.play().catch(()=>lifestylePhoto.classList.remove('is-video'));
+ },600);
+}
+lifestyleVideo.addEventListener('playing',()=>{
+ if(lifestyleVisible&&lifestyleFullscreen&&!document.hidden)lifestylePhoto.classList.add('is-video');
+});
+lifestyleVideo.addEventListener('error',()=>lifestylePhoto.classList.remove('is-video'));
+new IntersectionObserver(([entry])=>{
+ lifestyleVisible=entry.isIntersecting;
+ updateLifestylePlayback();
+},{threshold:.2}).observe(lifestylePin);
+document.addEventListener('visibilitychange',updateLifestylePlayback);
 const lifestyleCopy=lifestyle.querySelector('.lifestyle-copy');
 const photoReady=lifestyle.querySelector('img').hasAttribute('src');lifestyle.hidden=!photoReady;
 function lifestyleTop(){return lifestyle.getBoundingClientRect().top+scrollY}
@@ -73,7 +100,7 @@ function paint(state){
  // Entry masks never animate during exit: fade the complete paragraph block.
  heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
  heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
- if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`;lifestylePhoto.style.borderRadius=`${interpolate(24,0,zoom)}px`;const detail=lifestyleDetail.complete&&lifestyleDetail.naturalWidth?smooth(7.55,8,state):0;lifestylePhoto.style.setProperty('--photo-detail',String(detail));lifestylePhoto.classList.toggle('is-detail',detail>.5);const shade=smooth(8,9,state),text=smooth(8.08,8.85,state);lifestylePhoto.style.setProperty('--photo-dim',String(shade*(.28-.16*detail)));lifestyleCopy.style.opacity=String(text);lifestyleCopy.setAttribute('aria-hidden',String(text<.5));lifestylePhoto.querySelector('.photo-scroll-hint').style.opacity=String(smooth(7.75,8,state))}
+ if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`;lifestylePhoto.style.borderRadius=`${interpolate(24,0,zoom)}px`;const fullscreen=state>=7.999;if(fullscreen!==lifestyleFullscreen){lifestyleFullscreen=fullscreen;updateLifestylePlayback()}const shade=smooth(8,9,state),text=smooth(8.08,8.85,state);lifestylePhoto.style.setProperty('--photo-dim',String(shade*.18));lifestyleCopy.style.opacity=String(text);lifestyleCopy.setAttribute('aria-hidden',String(text<.5));lifestylePhoto.querySelector('.photo-scroll-hint').style.opacity=String(smooth(7.75,8,state))}
  updateCards(state);
  updateSteps(state);
  if(state>=3.25)positionWorkflowCopy(vh,mobile);

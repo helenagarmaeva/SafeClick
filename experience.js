@@ -47,9 +47,8 @@ new IntersectionObserver(([entry])=>{
  updateLifestylePlayback();
 },{threshold:.2}).observe(lifestylePin);
 document.addEventListener('visibilitychange',updateLifestylePlayback);
-const lifestyleCopy=lifestyle.querySelector('.lifestyle-copy');
-const phoneCopy=lifestyle.querySelector('.lifestyle-phone-copy');
-const slideVideos=[lifestyleVideo.getAttribute('src'),lifestyleVideo.dataset.schoolSrc];
+const lifestyleCopies=[...lifestyle.querySelectorAll('.lifestyle-copy')];
+const slideVideos=[lifestyleVideo.getAttribute('src'),lifestyleVideo.dataset.schoolSrc,lifestyleVideo.dataset.seniorSrc];
 const slidePhotos=[...lifestyle.querySelectorAll('.lifestyle-frames img')];
 const slideButtons=[...lifestyle.querySelectorAll('[data-slide-step]')];
 let activeSlide=0, slideTouch=null, lastHorizontalWheel=0;
@@ -61,8 +60,7 @@ function moveLifestyleSlide(step){
  lifestyleVideo.setAttribute('src',slideVideos[next]);
  activeSlide=next;
  lifestylePhoto.dataset.slide=String(next);
- lifestyleCopy.hidden=next!==0;
- phoneCopy.hidden=next!==1;
+ lifestyleCopies.forEach((copy,index)=>{copy.hidden=index!==next});
  slidePhotos.forEach((photo,index)=>photo.setAttribute('aria-hidden',String(index!==next)));
  slideButtons.forEach(button=>{button.disabled=next+Number(button.dataset.slideStep)<0||next+Number(button.dataset.slideStep)>=slidePhotos.length});
  schedulePaint();
@@ -140,7 +138,7 @@ function paint(state){
  heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
  heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
  if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`;lifestylePhoto.style.borderRadius=`${interpolate(24,0,zoom)}px`;const fullscreen=state>=7.999;if(fullscreen!==lifestyleFullscreen){lifestyleFullscreen=fullscreen;updateLifestylePlayback()}const shade=smooth(8,9,state),text=smooth(7.75,8,state);lifestylePhoto.style.setProperty('--photo-dim',String(shade*.18));lifestylePin.style.setProperty('--slide-width',lifestylePhoto.style.width);
- const activeCopy=phoneCopy.hidden?lifestyleCopy:phoneCopy;
+ const activeCopy=lifestyleCopies[activeSlide];
  activeCopy.style.opacity=String(text);
  activeCopy.setAttribute('aria-hidden',String(text<.5));lifestylePhoto.querySelector('.photo-scroll-hint').style.opacity=String(smooth(7.75,8,state))}
  updateCards(state);

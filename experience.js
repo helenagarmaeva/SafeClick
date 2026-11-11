@@ -17,26 +17,31 @@ function showcaseScrollTop(){return showcaseSection.getBoundingClientRect().top+
 const lifestyle=document.querySelector('.lifestyle-stage'),lifestylePhoto=lifestyle.querySelector('.lifestyle-photo');
 const lifestyleVideo=lifestyle.querySelector('.lifestyle-video');
 const lifestylePin=lifestyle.querySelector('.lifestyle-pin');
-let lifestyleVisible=false, lifestyleFullscreen=false, lifestylePlaybackTimer=null;
+const lifestylePlay=lifestyle.querySelector('.lifestyle-play');
+const lifestylePlayLabel=lifestylePlay.querySelector('span');
+let lifestyleVisible=false, lifestyleFullscreen=false;
 function updateLifestylePlayback(){
- const canPlay=lifestyleVisible&&lifestyleFullscreen&&!document.hidden;
- if(!canPlay){
-  clearTimeout(lifestylePlaybackTimer);
-  lifestylePlaybackTimer=null;
+ const available=lifestyleVisible&&lifestyleFullscreen&&!document.hidden;
+ lifestylePlay.hidden=!available;
+ if(!available){
   lifestyleVideo.pause();
   lifestylePhoto.classList.remove('is-video');
-  return;
  }
- if(lifestylePlaybackTimer!==null||!lifestyleVideo.paused)return;
- lifestylePlaybackTimer=setTimeout(()=>{
-  lifestylePlaybackTimer=null;
-  lifestyleVideo.muted=true;
-  lifestyleVideo.play().catch(()=>lifestylePhoto.classList.remove('is-video'));
- },600);
 }
-lifestyleVideo.addEventListener('playing',()=>{
- if(lifestyleVisible&&lifestyleFullscreen&&!document.hidden)lifestylePhoto.classList.add('is-video');
+lifestylePlay.addEventListener('click',()=>{
+ if(lifestylePlay.hidden)return;
+ if(!lifestyleVideo.paused){lifestyleVideo.pause();return}
+ lifestyleVideo.muted=true;
+ lifestyleVideo.play().catch(()=>{
+  lifestylePlayLabel.textContent='Video erneut abspielen';
+ });
 });
+lifestyleVideo.addEventListener('playing',()=>{
+ if(lifestylePlay.hidden){lifestyleVideo.pause();return}
+ lifestylePhoto.classList.add('is-video');
+ lifestylePlayLabel.textContent='Video pausieren';
+});
+lifestyleVideo.addEventListener('pause',()=>{lifestylePlayLabel.textContent='Video abspielen'});
 lifestyleVideo.addEventListener('error',()=>lifestylePhoto.classList.remove('is-video'));
 new IntersectionObserver(([entry])=>{
  lifestyleVisible=entry.isIntersecting;
@@ -100,7 +105,7 @@ function paint(state){
  // Entry masks never animate during exit: fade the complete paragraph block.
  heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
  heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
- if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`;lifestylePhoto.style.borderRadius=`${interpolate(24,0,zoom)}px`;const fullscreen=state>=7.999;if(fullscreen!==lifestyleFullscreen){lifestyleFullscreen=fullscreen;updateLifestylePlayback()}const shade=smooth(8,9,state),text=smooth(8.08,8.85,state);lifestylePhoto.style.setProperty('--photo-dim',String(shade*.18));lifestyleCopy.style.opacity=String(text);lifestyleCopy.setAttribute('aria-hidden',String(text<.5));lifestylePhoto.querySelector('.photo-scroll-hint').style.opacity=String(smooth(7.75,8,state))}
+ if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`;lifestylePhoto.style.borderRadius=`${interpolate(24,0,zoom)}px`;const fullscreen=state>=7.999;if(fullscreen!==lifestyleFullscreen){lifestyleFullscreen=fullscreen;updateLifestylePlayback()}const shade=smooth(8,9,state),text=smooth(7.75,8,state);lifestylePhoto.style.setProperty('--photo-dim',String(shade*.18));lifestyleCopy.style.opacity=String(text);lifestyleCopy.setAttribute('aria-hidden',String(text<.5));lifestylePhoto.querySelector('.photo-scroll-hint').style.opacity=String(smooth(7.75,8,state))}
  updateCards(state);
  updateSteps(state);
  if(state>=3.25)positionWorkflowCopy(vh,mobile);
@@ -216,7 +221,7 @@ if(!motionReduced&&matchMedia('(pointer:fine)').matches){
  document.documentElement.addEventListener('pointerleave',()=>{mouseTargetX=mouseTargetY=0;schedulePaint()});
 }
 // Duplicate visual lettering only; controls retain one accessible label.
-document.querySelectorAll('a:not(.header-brand),button:not(.menu-toggle),summary').forEach(control=>{
+document.querySelectorAll('a:not(.header-brand),button:not(.menu-toggle):not(.lifestyle-play),summary').forEach(control=>{
  const label=control.textContent.trim();if(!label)return;
  if(!control.hasAttribute('aria-label'))control.setAttribute('aria-label',label);
  const wrap=document.createElement('span');wrap.className='roll-label';wrap.setAttribute('aria-hidden','true');

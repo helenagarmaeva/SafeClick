@@ -243,7 +243,14 @@ footer.site-footer{padding-top:40px}
 .lifestyle-play[hidden]{display:none}
 .lifestyle-play:focus-visible{outline:2px solid white;outline-offset:-5px}
 
-.lifestyle-copy[hidden],.lifestyle-card[hidden]{display:none}
-.lifestyle-card{position:absolute;left:calc(75% + 16px);top:50%;transform:translateY(-50%);width:min(17vw,240px);aspect-ratio:4/5;display:grid;place-items:end start;padding:clamp(12px,2vw,24px);border:0;border-radius:18px;background:#d8d8d8;color:#101014;text-align:left;font:inherit;font-weight:650;cursor:pointer}
-.lifestyle-card:focus-visible{outline:2px solid currentColor;outline-offset:4px}
-@media(max-width:760px){.lifestyle-card{left:auto;right:6%;top:calc(50% + 24.79vw + 12px);transform:none;width:44%;aspect-ratio:auto;min-height:64px}}
+.lifestyle-copy[hidden]{display:none}
+.lifestyle-frames{display:flex;width:100%;height:100%;transition:transform .4s ease}
+.lifestyle-frames img{flex:0 0 100%;min-width:0}
+.lifestyle-frames img:nth-child(2){object-position:43% 70%}
+.lifestyle-photo[data-slide="1"] .lifestyle-frames{transform:translateX(-100%)}
+.lifestyle-photo{pointer-events:auto}
+.lifestyle-nav{position:absolute;inset-inline:max(12px,calc((100vw - var(--slide-width,50vw))/2 + 12px));top:50%;transform:translateY(-50%);display:flex;justify-content:space-between;z-index:3;pointer-events:none}
+.lifestyle-nav button{display:grid;place-items:center;width:44px;height:44px;padding:0 0 4px;border:0;border-radius:50%;background:#15151bdd;color:#fff;font:32px/1 system-ui;cursor:pointer;pointer-events:auto}
+.lifestyle-nav button:disabled{visibility:hidden}
+.lifestyle-nav button:focus-visible{outline:2px solid white;outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.lifestyle-frames{transition:none}}

@@ -18,7 +18,6 @@ const lifestyle=document.querySelector('.lifestyle-stage'),lifestylePhoto=lifest
 const lifestyleVideo=lifestyle.querySelector('.lifestyle-video');
 const lifestylePin=lifestyle.querySelector('.lifestyle-pin');
 const lifestylePlay=lifestyle.querySelector('.lifestyle-play');
-const lifestylePlayLabel=lifestylePlay.querySelector('span');
 let lifestyleVisible=false, lifestyleFullscreen=false;
 function updateLifestylePlayback(){
  const available=lifestyleVisible&&lifestyleFullscreen&&!document.hidden;
@@ -33,15 +32,15 @@ lifestylePlay.addEventListener('click',()=>{
  if(!lifestyleVideo.paused){lifestyleVideo.pause();return}
  lifestyleVideo.muted=true;
  lifestyleVideo.play().catch(()=>{
-  lifestylePlayLabel.textContent='Video erneut abspielen';
+  lifestylePlay.setAttribute('aria-label','Video erneut abspielen');
  });
 });
 lifestyleVideo.addEventListener('playing',()=>{
  if(lifestylePlay.hidden){lifestyleVideo.pause();return}
  lifestylePhoto.classList.add('is-video');
- lifestylePlayLabel.textContent='Video pausieren';
+ lifestylePlay.setAttribute('aria-label','Video pausieren');
 });
-lifestyleVideo.addEventListener('pause',()=>{lifestylePlayLabel.textContent='Video abspielen'});
+lifestyleVideo.addEventListener('pause',()=>{lifestylePlay.setAttribute('aria-label','Video abspielen')});
 lifestyleVideo.addEventListener('error',()=>lifestylePhoto.classList.remove('is-video'));
 new IntersectionObserver(([entry])=>{
  lifestyleVisible=entry.isIntersecting;

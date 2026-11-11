@@ -48,6 +48,13 @@ new IntersectionObserver(([entry])=>{
 },{threshold:.2}).observe(lifestylePin);
 document.addEventListener('visibilitychange',updateLifestylePlayback);
 const lifestyleCopy=lifestyle.querySelector('.lifestyle-copy');
+const phoneCopy=lifestyle.querySelector('.lifestyle-phone-copy');
+const phoneCard=lifestyle.querySelector('.lifestyle-card');
+phoneCard.addEventListener('click',()=>{
+ lifestyleCopy.hidden=true;
+ phoneCopy.hidden=false;
+ navigateTo(8);
+});
 const photoReady=lifestyle.querySelector('img').hasAttribute('src');lifestyle.hidden=!photoReady;
 function lifestyleTop(){return lifestyle.getBoundingClientRect().top+scrollY}
 function sceneEnd(){return photoReady?9:7}
@@ -104,7 +111,11 @@ function paint(state){
  // Entry masks never animate during exit: fade the complete paragraph block.
  heroCopy.querySelectorAll('.line-text').forEach(line=>{if(t>.001)line.getAnimations().forEach(animation=>animation.cancel());line.style.opacity='1';line.style.transform='none'});
  heroPicker.style.opacity=String(1-smooth(.01,.4,state));heroPicker.inert=state>.15;
- if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`;lifestylePhoto.style.borderRadius=`${interpolate(24,0,zoom)}px`;const fullscreen=state>=7.999;if(fullscreen!==lifestyleFullscreen){lifestyleFullscreen=fullscreen;updateLifestylePlayback()}const shade=smooth(8,9,state),text=smooth(7.75,8,state);lifestylePhoto.style.setProperty('--photo-dim',String(shade*.18));lifestyleCopy.style.opacity=String(text);lifestyleCopy.setAttribute('aria-hidden',String(text<.5));lifestylePhoto.querySelector('.photo-scroll-hint').style.opacity=String(smooth(7.75,8,state))}
+ if(photoReady){const zoom=smooth(7,8,state),initialWidth=vw*(mobile?.88:.5);lifestylePhoto.style.width=`${interpolate(initialWidth,vw,zoom)}px`;lifestylePhoto.style.height=`${interpolate(initialWidth*941/1670,vh,zoom)}px`;lifestylePhoto.style.borderRadius=`${interpolate(24,0,zoom)}px`;const fullscreen=state>=7.999;if(fullscreen!==lifestyleFullscreen){lifestyleFullscreen=fullscreen;updateLifestylePlayback()}const shade=smooth(8,9,state),text=smooth(7.75,8,state);lifestylePhoto.style.setProperty('--photo-dim',String(shade*.18));phoneCard.hidden=zoom>.15;
+ if(state<6.9&&!menuTransition){lifestyleCopy.hidden=false;phoneCopy.hidden=true}
+ const activeCopy=phoneCopy.hidden?lifestyleCopy:phoneCopy;
+ activeCopy.style.opacity=String(text);
+ activeCopy.setAttribute('aria-hidden',String(text<.5));lifestylePhoto.querySelector('.photo-scroll-hint').style.opacity=String(smooth(7.75,8,state))}
  updateCards(state);
  updateSteps(state);
  if(state>=3.25)positionWorkflowCopy(vh,mobile);
@@ -220,7 +231,7 @@ if(!motionReduced&&matchMedia('(pointer:fine)').matches){
  document.documentElement.addEventListener('pointerleave',()=>{mouseTargetX=mouseTargetY=0;schedulePaint()});
 }
 // Duplicate visual lettering only; controls retain one accessible label.
-document.querySelectorAll('a:not(.header-brand),button:not(.menu-toggle):not(.lifestyle-play),summary').forEach(control=>{
+document.querySelectorAll('a:not(.header-brand),button:not(.menu-toggle):not(.lifestyle-play):not(.lifestyle-card),summary').forEach(control=>{
  const label=control.textContent.trim();if(!label)return;
  if(!control.hasAttribute('aria-label'))control.setAttribute('aria-label',label);
  const wrap=document.createElement('span');wrap.className='roll-label';wrap.setAttribute('aria-hidden','true');
